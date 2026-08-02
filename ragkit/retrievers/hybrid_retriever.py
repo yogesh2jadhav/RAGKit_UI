@@ -19,6 +19,8 @@ Does NOT
 """
 
 from __future__ import annotations
+from ragkit.ranking.rank_fusion import RankFusion
+from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 
 from typing import Any
 
@@ -37,6 +39,7 @@ class HybridRetriever(Retriever):
         *,
         retriever: Retriever,
         keyword_searcher: KeywordSearcher,
+        rank_fusion: RankFusion | None = None,
     ) -> None:
         """
         Initialize the hybrid retriever.
@@ -50,8 +53,13 @@ class HybridRetriever(Retriever):
             Keyword search implementation.
         """
 
-        self._retriever = retriever
+        self._semantic_retriever = retriever
         self._keyword_searcher = keyword_searcher
+
+        if rank_fusion is None:
+            rank_fusion = ReciprocalRankFusion()
+
+        self._rank_fusion = rank_fusion
 
     def retrieve(
         self,
@@ -65,7 +73,7 @@ class HybridRetriever(Retriever):
         """
 
         vector_results = list(
-            self._retriever.retrieve(
+            self._semantic_retriever.retrieve(
                 query=query,
                 top_k=top_k,
                 filters=filters,
@@ -79,20 +87,10 @@ class HybridRetriever(Retriever):
             )
         )
 
-        merged: list[SearchResult] = []
-
-        seen: set = set()
-
-        for result in vector_results + keyword_results:
-
-            if result.chunk.id in seen:
-                continue
-
-            seen.add(result.chunk.id)
-
-            merged.append(result)
-
-            if len(merged) >= top_k:
-                break
-
-        return merged
+        return self._rank_fusion.fuse(
+            [
+                vector_results,
+                keyword_results,
+            ],
+            top_k=top_k,
+        )
