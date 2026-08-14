@@ -21,6 +21,7 @@ class LocalSource(Source):
     SUPPORTED_EXTENSIONS = {
         ".txt",
         ".md",
+        ".docx"
     }
     '''
     => following is the constructor which take path as input and read full directory. 
