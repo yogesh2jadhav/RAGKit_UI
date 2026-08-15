@@ -48,8 +48,9 @@ python examples/15_rrf_chat.py
 """
 
 from pathlib import Path
+from time import sleep
 
-from ragkit.chunkers.character_chunker import CharacterChunker
+from ragkit.chunkers.structured_text_chunker import StructuredTextChunker
 from ragkit.embeddings.ollama_embedder import OllamaEmbedder
 from ragkit.indexers.document_indexer import DocumentIndexer
 from ragkit.keyword.bm25_searcher import BM25Searcher
@@ -99,9 +100,9 @@ def build_index(
 
     processor = DocumentProcessor(
         transformer=MarkdownTransformer(),
-        chunker=CharacterChunker(
-            chunk_size=300,
-            chunk_overlap=50,
+        chunker=StructuredTextChunker(
+            chunk_size=2500,
+            chunk_overlap=100,
         ),
         embedder=OllamaEmbedder(
             model=EMBEDDING_MODEL,
@@ -322,7 +323,12 @@ def chat(
             query=query,
             search_results=rrf_results,
         )
-
+        print()
+        print("=" * 70)
+        print("FINAL LLM PROMPT")
+        print("=" * 70)
+        print()
+       # print(prompt)
         #
         # --------------------------------------------------------
         # 5. CALL LOCAL LLM
