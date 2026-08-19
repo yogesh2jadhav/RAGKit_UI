@@ -101,7 +101,7 @@ def build_index(
     processor = DocumentProcessor(
         transformer=MarkdownTransformer(),
         chunker=StructuredTextChunker(
-            chunk_size=2500,
+            chunk_size=1000,
             chunk_overlap=100,
         ),
         embedder=OllamaEmbedder(
