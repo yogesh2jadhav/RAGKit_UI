@@ -294,3 +294,14 @@ class ChromaVectorStore(VectorStore):
             return dict(filters)
 
         return {"$and": [{key: value} for key, value in filters.items()]}
+
+    def clear(self) -> None:
+        """
+        Remove all indexed chunks from the collection.
+        """
+        ids = self._collection.get()["ids"]
+
+        if ids:
+            self._collection.delete(
+                ids=ids,
+            )

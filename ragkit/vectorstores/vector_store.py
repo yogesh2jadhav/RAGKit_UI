@@ -134,3 +134,10 @@ class VectorStore(ABC):
         Return the number of stored vectors.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def clear(self) -> None:
+        """
+        Remove all indexed data from the vector store.
+        """
+        raise NotImplementedError

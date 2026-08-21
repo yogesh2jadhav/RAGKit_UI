@@ -114,6 +114,12 @@ def build_index(
         vector_store=vector_store,
     )
 
+    print("Clearing existing index...")
+
+    vector_store.clear()
+
+    print("Building fresh index...")
+
     result = indexer.index(
         LocalSource(DOCS_DIR),
     )

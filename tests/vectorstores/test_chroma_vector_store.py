@@ -459,3 +459,53 @@ def test_search_top_k(tmp_path):
         assert "_ragkit_start_offset" not in retrieved_chunk.metadata
         assert "_ragkit_end_offset" not in retrieved_chunk.metadata
         assert "_ragkit_model" not in retrieved_chunk.metadata
+
+    def test_clear_removes_all_embeddings(tmp_path):
+        """
+        Verify clear removes all stored embeddings.
+        """
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        chunk1 = create_chunk("Chunk 1")
+        chunk2 = create_chunk("Chunk 2", 1)
+
+        embedding1 = create_embedding(
+            chunk1,
+            [0.1, 0.2, 0.3],
+        )
+
+        embedding2 = create_embedding(
+            chunk2,
+            [0.4, 0.5, 0.6],
+        )
+
+        store.add(
+            chunks=[chunk1, chunk2],
+            embeddings=[embedding1, embedding2],
+        )
+
+        assert store.count() == 2
+
+        store.clear()
+
+        assert store.count() == 0
+
+    def test_clear_empty_store(tmp_path):
+        """
+        Verify clear works when the vector store is already empty.
+        """
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        assert store.count() == 0
+
+        store.clear()
+
+        assert store.count() == 0

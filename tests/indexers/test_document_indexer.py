@@ -143,6 +143,14 @@ class FakeVectorStore(VectorStore):
     ) -> Iterable[Chunk]:
         return iter(())
 
+    def clear(self) -> None:
+        """
+        Clear the fake vector store.
+        """
+        self.add_called = False
+        self.chunk_count = 0
+        self.embedding_count = 0
+
 
 def test_document_indexer_indexes_documents(monkeypatch):
     """
@@ -258,3 +266,11 @@ def test_document_indexer_uses_transformer(
     )
 
     assert transformer.called
+
+def clear(self) -> None:
+    """
+    Clear the fake vector store.
+    """
+    self.add_called = False
+    self.chunk_count = 0
+    self.embedding_count = 0

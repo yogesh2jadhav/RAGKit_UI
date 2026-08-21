@@ -77,6 +77,14 @@ class FakeVectorStore(VectorStore):
             score=0.123,
         )
 
+    def clear(self) -> None:
+        """
+        Clear the fake vector store.
+        """
+        self.last_top_k = None
+        self.last_query_embedding = None
+        self.last_filters = None
+
     def count(self) -> int:
         return 0
 
@@ -203,5 +211,13 @@ def test_similarity_retriever_passes_filters():
     )
 
     assert vector_store.last_filters == filters
+
+def clear(self) -> None:
+    """
+    Clear the fake vector store.
+    """
+    self.last_top_k = None
+    self.last_query_embedding = None
+    self.last_filters = None
 
    
