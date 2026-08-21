@@ -16,6 +16,7 @@ ragkit/chunkers/TokenChunker.py
 ragkit/chunkers/__init__.py
 ragkit/chunkers/character_chunker.py
 ragkit/chunkers/chunker.py
+ragkit/chunkers/structured_text_chunker.py
 ragkit/config/__init__.py
 ragkit/config/chunker_config.py
 ragkit/config/embedding_config.py
@@ -46,6 +47,7 @@ ragkit/llms/__init__.py
 ragkit/llms/llm.py
 ragkit/llms/ollama_llm.py
 ragkit/loaders/__init__.py
+ragkit/loaders/docx_loader.py
 ragkit/loaders/loader.py
 ragkit/loaders/loader_factory.py
 ragkit/loaders/text_loader.py
@@ -66,6 +68,9 @@ ragkit/processors/document_processor.py
 ragkit/prompts/__init__.py
 ragkit/prompts/default_prompt_builder.py
 ragkit/prompts/prompt_builder.py
+ragkit/ranking/__init__.py
+ragkit/ranking/rank_fusion.py
+ragkit/ranking/reciprocal_rank_fusion.py
 ragkit/rerankers/__init__.py
 ragkit/rerankers/identity_reranker.py
 ragkit/rerankers/llm_reranker.py
@@ -76,6 +81,8 @@ ragkit/retrievers/__init__.py
 ragkit/retrievers/hybrid_retriever.py
 ragkit/retrievers/retriever.py
 ragkit/retrievers/similarity_retriever.py
+ragkit/services/__init__.py
+ragkit/services/rag_service.py
 ragkit/sources/__init__.py
 ragkit/sources/local_source.py
 ragkit/sources/metadata_local_source.py
