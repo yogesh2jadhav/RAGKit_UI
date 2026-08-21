@@ -43,14 +43,17 @@ class FakeBM25Searcher:
     def __init__(self) -> None:
         self.last_query = None
         self.last_top_k = None
+        self.last_document_ids = None
 
     def search(
         self,
         query: str,
         top_k: int = 5,
+        document_ids=None,
     ) -> Iterable[SearchResult]:
         self.last_query = query
         self.last_top_k = top_k
+        self.last_document_ids = document_ids
 
         return []
 
@@ -333,3 +336,35 @@ def test_rag_service_rejects_invalid_top_k():
         create_service(
             top_k=0,
         )
+
+def test_rag_service_passes_document_ids_to_bm25():
+    """
+    Verify selected document IDs are forwarded
+    to BM25 search.
+    """
+
+    from uuid import uuid4
+
+    (
+        service,
+        _,
+        keyword_searcher,
+        _,
+        _,
+        _,
+    ) = create_service()
+
+    document_ids = [
+        uuid4(),
+        uuid4(),
+    ]
+
+    service.ask(
+        "Apache Spark",
+        document_ids=document_ids,
+    )
+
+    assert keyword_searcher.last_document_ids == document_ids
+
+
+

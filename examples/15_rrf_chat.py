@@ -63,7 +63,7 @@ from ragkit.retrievers.similarity_retriever import SimilarityRetriever
 from ragkit.sources.local_source import LocalSource
 from ragkit.transformers.markdown_transformer import MarkdownTransformer
 from ragkit.vectorstores.chroma_vector_store import ChromaVectorStore
-
+from ragkit.services.rag_service import RAGService
 
 EXAMPLES_DIR = Path(__file__).parent
 DOCS_DIR = EXAMPLES_DIR / "docs"
@@ -185,20 +185,11 @@ def chat(
     """
     Start interactive RRF-based RAG chat.
 
-    Retrieval flow:
+    RAG orchestration is handled by RAGService.
 
-        Vector Search
-              +
-            BM25
-              |
-              v
-             RRF
-              |
-              v
-        Prompt Builder
-              |
-              v
-            Ollama
+    The CLI is responsible only for:
+    - Reading user input.
+    - Displaying the answer.
     """
 
     #
@@ -238,6 +229,18 @@ def chat(
         model=LLM_MODEL,
     )
 
+    #
+    # Application-level RAG service.
+    #
+    rag_service = RAGService(
+        retriever=vector_retriever,
+        keyword_searcher=keyword_searcher,
+        rrf=rrf,
+        prompt_builder=prompt_builder,
+        llm=llm,
+        top_k=RETRIEVAL_TOP_K,
+    )
+
     print()
     print("=" * 70)
     print("RRF Chat")
@@ -262,87 +265,16 @@ def chat(
             continue
 
         #
-        # --------------------------------------------------------
-        # 1. VECTOR SEARCH
-        # --------------------------------------------------------
+        # RAGService now handles:
         #
-
-        vector_results = list(
-            vector_retriever.retrieve(
-                query=query,
-                top_k=RETRIEVAL_TOP_K,
-            )
-        )
-
+        # Vector Search
+        # BM25
+        # RRF
+        # Prompt Builder
+        # LLM
         #
-        # --------------------------------------------------------
-        # 2. BM25 SEARCH
-        # --------------------------------------------------------
-        #
-
-        bm25_results = list(
-            keyword_searcher.search(
-                query=query,
-                top_k=RETRIEVAL_TOP_K,
-            )
-        )
-
-        #
-        # --------------------------------------------------------
-        # 3. RRF FUSION
-        # --------------------------------------------------------
-        #
-
-        rrf_results = rrf.fuse(
-            [
-                vector_results,
-                bm25_results,
-            ],
-            top_k=RETRIEVAL_TOP_K,
-        )
-
-        #
-        # Show the intermediate retrieval results.
-        #
-        print_results(
-            "Vector Search Results",
-            vector_results,
-        )
-
-        print_results(
-            "BM25 Results",
-            bm25_results,
-        )
-
-        print_results(
-            "RRF Results",
-            rrf_results,
-        )
-
-        #
-        # --------------------------------------------------------
-        # 4. BUILD LLM PROMPT
-        # --------------------------------------------------------
-        #
-
-        prompt = prompt_builder.build(
-            query=query,
-            search_results=rrf_results,
-        )
-        print()
-        print("=" * 70)
-        print("FINAL LLM PROMPT")
-        print("=" * 70)
-        print()
-       # print(prompt)
-        #
-        # --------------------------------------------------------
-        # 5. CALL LOCAL LLM
-        # --------------------------------------------------------
-        #
-
-        response = llm.generate(
-            prompt=prompt,
+        response = rag_service.ask(
+            query,
         )
 
         print()
@@ -351,7 +283,6 @@ def chat(
         print("=" * 70)
         print()
         print(response.content)
-
 
 def statistics(
     vector_store: ChromaVectorStore,

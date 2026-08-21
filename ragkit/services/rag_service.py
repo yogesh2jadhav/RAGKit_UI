@@ -30,7 +30,8 @@ from ragkit.models.llm_response import LLMResponse
 from ragkit.prompts.prompt_builder import PromptBuilder
 from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 from ragkit.retrievers.retriever import Retriever
-
+from collections.abc import Iterable
+from uuid import UUID
 
 class RAGService:
     """
@@ -88,10 +89,11 @@ class RAGService:
         self._top_k = top_k
 
     def ask(
-        self,
-        query: str,
-        *,
-        filters: dict[str, Any] | None = None,
+            self,
+            query: str,
+            *,
+            document_ids: Iterable[UUID] | None = None,
+            filters: dict[str, Any] | None = None,
     ) -> LLMResponse:
         """
         Execute a RAG query.
@@ -157,6 +159,7 @@ class RAGService:
             self._keyword_searcher.search(
                 query=query,
                 top_k=self._top_k,
+                document_ids=document_ids,
             )
         )
 

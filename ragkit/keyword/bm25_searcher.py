@@ -17,7 +17,7 @@ Does NOT
 """
 
 from __future__ import annotations
-
+from uuid import UUID
 import re
 from collections.abc import Iterable
 
@@ -50,17 +50,23 @@ class BM25Searcher(KeywordSearcher):
         self._build_index()
 
     def search(
-        self,
-        query: str,
-        *,
-        top_k: int = 5,
+            self,
+            query: str,
+            *,
+            top_k: int = 5,
+            document_ids: Iterable[UUID] | None = None,
     ) -> Iterable[SearchResult]:
         """
         Perform BM25 keyword search.
+
+        When document_ids is provided, only chunks belonging
+        to those documents are considered.
         """
 
         if self._bm25 is None:
-            raise KeywordSearcherError("BM25 index has not been built.")
+            raise KeywordSearcherError(
+                "BM25 index has not been built."
+            )
 
         query_tokens = self._tokenize(
             query,
@@ -70,18 +76,30 @@ class BM25Searcher(KeywordSearcher):
             query_tokens,
         )
 
+        selected_document_ids = (
+            set(document_ids)
+            if document_ids is not None
+            else None
+        )
+
         ranked = sorted(
-            zip(
+            (
+                (chunk, score)
+                for chunk, score in zip(
                 self._chunks,
                 scores,
                 strict=True,
+            )
+                if (
+                    selected_document_ids is None
+                    or chunk.document_id in selected_document_ids
+            )
             ),
             key=lambda item: item[1],
             reverse=True,
         )
 
         for chunk, score in ranked[:top_k]:
-
             yield SearchResult(
                 chunk=chunk,
                 score=float(score),

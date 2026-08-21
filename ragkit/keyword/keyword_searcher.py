@@ -15,11 +15,11 @@ Does NOT
 - Merge search results.
 - Call an LLM.
 """
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from uuid import UUID
 
 from ragkit.models.search_result import SearchResult
 
@@ -35,6 +35,7 @@ class KeywordSearcher(ABC):
         query: str,
         *,
         top_k: int = 5,
+        document_ids: Iterable[UUID] | None = None,
     ) -> Iterable[SearchResult]:
         """
         Perform keyword search.
@@ -46,6 +47,11 @@ class KeywordSearcher(ABC):
 
         top_k
             Maximum number of results.
+
+        document_ids
+            Optional document IDs used to restrict the search.
+
+            None means search all documents.
 
         Returns
         -------

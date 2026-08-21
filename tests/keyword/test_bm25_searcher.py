@@ -158,3 +158,195 @@ def test_bm25_unknown_query(
     # BM25 returns a score even if it is zero.
     #
     assert len(results) == 1
+
+    def create_chunk_for_document(
+        content: str,
+        document_id,
+        index: int = 0,
+    ) -> Chunk:
+        return Chunk(
+            id=uuid4(),
+            document_id=document_id,
+            index=index,
+            content=content,
+            start_offset=0,
+            end_offset=len(content),
+            metadata={},
+        )
+
+    def test_bm25_filters_by_document_id(
+            tmp_path,
+    ):
+        """
+        Verify BM25 only returns chunks from
+        the selected document.
+        """
+
+        from uuid import uuid4
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        document_a = uuid4()
+        document_b = uuid4()
+
+        chunk_a = create_chunk_for_document(
+            "Apache Spark is fast",
+            document_a,
+        )
+
+        chunk_b = create_chunk_for_document(
+            "Apache Spark runs on Kubernetes",
+            document_b,
+        )
+
+        store.add(
+            chunks=[
+                chunk_a,
+                chunk_b,
+            ],
+            embeddings=[
+                create_embedding(chunk_a),
+                create_embedding(chunk_b),
+            ],
+        )
+
+        searcher = BM25Searcher(
+            vector_store=store,
+        )
+
+        results = list(
+            searcher.search(
+                "spark",
+                document_ids=[document_a],
+            )
+        )
+
+        assert len(results) == 1
+
+        assert results[0].chunk.document_id == document_a
+        assert results[0].chunk.content == "Apache Spark is fast"
+
+    def test_bm25_filters_by_document_id(
+            tmp_path,
+    ):
+        """
+        Verify BM25 only returns chunks from
+        the selected document.
+        """
+
+        from uuid import uuid4
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        document_a = uuid4()
+        document_b = uuid4()
+
+        chunk_a = create_chunk_for_document(
+            "Apache Spark is fast",
+            document_a,
+        )
+
+        chunk_b = create_chunk_for_document(
+            "Apache Spark runs on Kubernetes",
+            document_b,
+        )
+
+        store.add(
+            chunks=[
+                chunk_a,
+                chunk_b,
+            ],
+            embeddings=[
+                create_embedding(chunk_a),
+                create_embedding(chunk_b),
+            ],
+        )
+
+        searcher = BM25Searcher(
+            vector_store=store,
+        )
+
+        results = list(
+            searcher.search(
+                "spark",
+                document_ids=[document_a],
+            )
+        )
+
+        assert len(results) == 1
+
+        assert results[0].chunk.document_id == document_a
+        assert results[0].chunk.content == "Apache Spark is fast"
+
+    def test_bm25_filters_multiple_documents(
+            tmp_path,
+    ):
+        """
+        Verify BM25 can search multiple selected documents.
+        """
+
+        from uuid import uuid4
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        document_a = uuid4()
+        document_b = uuid4()
+        document_c = uuid4()
+
+        chunks = [
+            create_chunk_for_document(
+                "Apache Spark A",
+                document_a,
+            ),
+            create_chunk_for_document(
+                "Apache Spark B",
+                document_b,
+            ),
+            create_chunk_for_document(
+                "Apache Spark C",
+                document_c,
+            ),
+        ]
+
+        store.add(
+            chunks=chunks,
+            embeddings=[
+                create_embedding(chunk)
+                for chunk in chunks
+            ],
+        )
+
+        searcher = BM25Searcher(
+            vector_store=store,
+        )
+
+        results = list(
+            searcher.search(
+                "spark",
+                document_ids=[
+                    document_a,
+                    document_b,
+                ],
+            )
+        )
+
+        assert len(results) == 2
+
+        result_document_ids = {
+            result.chunk.document_id
+            for result in results
+        }
+
+        assert result_document_ids == {
+            document_a,
+            document_b,
+        }
