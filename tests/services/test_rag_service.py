@@ -10,7 +10,8 @@ from ragkit.prompts.prompt_builder import PromptBuilder
 from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 from ragkit.retrievers.retriever import Retriever
 from ragkit.services.rag_service import RAGService
-
+from ragkit.models.rag_response import RAGResponse
+from ragkit.models.chunk import Chunk
 
 class FakeRetriever(Retriever):
     """
@@ -169,8 +170,8 @@ def test_rag_service_returns_llm_response():
         "How many years of experience?",
     )
 
-    assert isinstance(response, LLMResponse)
-    assert response.content == "TEST ANSWER"
+    assert isinstance(response, RAGResponse)
+    assert response.answer == "TEST ANSWER"
     assert llm.last_prompt == "TEST PROMPT"
 
 
@@ -367,4 +368,58 @@ def test_rag_service_passes_document_ids_to_bm25():
     assert keyword_searcher.last_document_ids == document_ids
 
 
+def test_rag_service_returns_sources():
+    """
+    Verify RAGService returns sources from RRF results.
+    """
 
+    from uuid import uuid4
+
+    document_id = uuid4()
+    chunk_id = uuid4()
+
+    chunk = Chunk(
+        id=chunk_id,
+        document_id=document_id,
+        index=0,
+        content="Yogesh has nearly 20 years of experience.",
+        start_offset=0,
+        end_offset=48,
+        metadata={
+            "filename": "Yogesh Ashok 007.docx",
+        },
+    )
+
+    result = SearchResult(
+        chunk=chunk,
+        score=0.95,
+    )
+
+    (
+        service,
+        _,
+        keyword_searcher,
+        rrf,
+        _,
+        _,
+    ) = create_service()
+
+    #
+    # Make RRF return our fake result.
+    #
+    rrf.fuse = lambda result_lists, top_k=5: [
+        result,
+    ]
+
+    response = service.ask(
+        "How many years of experience?",
+    )
+
+    assert len(response.sources) == 1
+
+    source = response.sources[0]
+
+    assert source.document_id == document_id
+    assert source.filename == "Yogesh Ashok 007.docx"
+    assert source.chunk_id == chunk_id
+    assert source.score == 0.95

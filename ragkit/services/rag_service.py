@@ -21,7 +21,10 @@ Does NOT
 """
 
 from __future__ import annotations
-
+from ragkit.models.rag_response import (
+    RAGResponse,
+    RAGSource,
+)
 from typing import Any
 
 from ragkit.keyword.bm25_searcher import BM25Searcher
@@ -194,6 +197,32 @@ class RAGService:
         # --------------------------------------------------------
         #
 
-        return self._llm.generate(
+        llm_response = self._llm.generate(
             prompt=prompt,
+        )
+
+        #
+        # --------------------------------------------------------
+        # 6. BUILD SOURCES
+        # --------------------------------------------------------
+        #
+
+        sources = [
+            RAGSource(
+                document_id=result.chunk.document_id,
+                filename=str(
+                    result.chunk.metadata.get(
+                        "filename",
+                        result.chunk.document_id,
+                    )
+                ),
+                chunk_id=result.chunk.id,
+                score=result.score,
+            )
+            for result in rrf_results
+        ]
+
+        return RAGResponse(
+            answer=llm_response.content,
+            sources=sources,
         )

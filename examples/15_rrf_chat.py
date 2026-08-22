@@ -273,16 +273,14 @@ def chat(
         # Prompt Builder
         # LLM
         #
-        response = rag_service.ask(
-            query,
-        )
+        response = rag_service.ask(query)
 
         print()
         print("=" * 70)
         print("Assistant")
         print("=" * 70)
         print()
-        print(response.content)
+        print(response.answer)
 
 def statistics(
     vector_store: ChromaVectorStore,

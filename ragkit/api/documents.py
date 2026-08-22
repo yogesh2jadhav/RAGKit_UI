@@ -1,5 +1,18 @@
 """
-Document API routes.
+Purpose
+-------
+HTTP endpoints for indexed documents.
+
+Responsibilities
+----------------
+- Expose indexed documents through the REST API.
+- Delegate document operations to DocumentService.
+
+Does NOT
+--------
+- Access ChromaDB directly.
+- Perform document indexing.
+- Perform RAG retrieval.
 """
 
 from __future__ import annotations
@@ -10,17 +23,11 @@ from ragkit.models.document_info import DocumentInfo
 from ragkit.services.document_service import DocumentService
 
 
-router = APIRouter(
-    prefix="/api/documents",
-    tags=["documents"],
-)
-
-
 def create_document_router(
     document_service: DocumentService,
 ) -> APIRouter:
     """
-    Create document API routes using the supplied service.
+    Create the document API router.
     """
 
     router = APIRouter(
