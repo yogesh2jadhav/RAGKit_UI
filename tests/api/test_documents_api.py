@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from ragkit.api.app import create_app
 from ragkit.models.document_info import DocumentInfo
-
+from ragkit.services.rag_service_factory import create_rag_service
 
 class FakeDocumentService:
     """
