@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 from ragkit.models.chunk import Chunk
 from ragkit.models.embedding import Embedding
+from ragkit.models.indexing_result import IndexingResult
 from ragkit.models.query_embedding import QueryEmbedding
 from ragkit.models.search_result import SearchResult
 from ragkit.services.document_service import DocumentService
@@ -27,7 +28,13 @@ class FakeVectorStore(VectorStore):
         chunks: Iterable[Chunk],
         embeddings: Iterable[Embedding],
     ) -> None:
-        raise NotImplementedError
+        """
+        Add chunks to the fake vector store.
+        """
+
+        self._chunks.extend(
+            list(chunks),
+        )
 
     def search(
         self,
@@ -81,6 +88,62 @@ class FakeBM25Searcher:
         """
 
         self.rebuild_count += 1
+
+
+class FakeDocumentIndexer:
+    """
+    Fake DocumentIndexer used for upload tests.
+    """
+
+    def __init__(
+        self,
+        vector_store: FakeVectorStore,
+        document_id: UUID,
+    ) -> None:
+        self._vector_store = vector_store
+        self._document_id = document_id
+        self.index_count = 0
+
+    def index(
+        self,
+        source,
+    ) -> IndexingResult:
+        """
+        Simulate indexing one document.
+        """
+
+        self.index_count += 1
+
+        source_document = next(
+            source.discover(),
+        )
+
+        filename = Path(
+            source_document.uri,
+        ).name
+
+        chunk = create_chunk(
+            self._document_id,
+            filename,
+            0,
+        )
+
+        embedding = Embedding(
+            chunk_id=chunk.id,
+            model="unit-test",
+            vector=[0.1, 0.2],
+        )
+
+        self._vector_store.add(
+            chunks=[chunk],
+            embeddings=[embedding],
+        )
+
+        return IndexingResult(
+            documents=1,
+            chunks=1,
+            embeddings=1,
+        )
 
 
 def create_chunk(
@@ -357,7 +420,6 @@ def test_delete_document_deletes_physical_file(
     )
 
     documents_dir = tmp_path / "documents"
-
     documents_dir.mkdir()
 
     document_path = (
@@ -368,10 +430,6 @@ def test_delete_document_deletes_physical_file(
         b"test document",
     )
 
-    #
-    # Patch the Path used by DocumentService so that
-    # its project root resolves to tmp_path.
-    #
     original_resolve = Path.resolve
 
     def fake_resolve(path: Path) -> Path:
@@ -398,6 +456,7 @@ def test_delete_document_deletes_physical_file(
     )
 
     assert not document_path.exists()
+
 
 def test_delete_document_rebuilds_bm25():
     """
@@ -456,3 +515,173 @@ def test_delete_document_rejects_unknown_document():
         raise AssertionError(
             "Expected ValueError for unknown document."
         )
+
+
+def test_upload_document_replaces_existing_document(
+    tmp_path: Path,
+    monkeypatch,
+):
+    """
+    Verify uploading the same filename replaces the existing
+    indexed document.
+    """
+
+    filename = "Resume.docx"
+
+    old_document_id = uuid4()
+    new_document_id = uuid4()
+
+    old_chunk = create_chunk(
+        old_document_id,
+        filename,
+        0,
+    )
+
+    vector_store = FakeVectorStore(
+        [old_chunk],
+    )
+
+    bm25_searcher = FakeBM25Searcher()
+
+    document_indexer = FakeDocumentIndexer(
+        vector_store=vector_store,
+        document_id=new_document_id,
+    )
+
+    service = DocumentService(
+        vector_store=vector_store,
+        document_indexer=document_indexer,
+        bm25_searcher=bm25_searcher,
+    )
+
+    documents_dir = tmp_path / "documents"
+    documents_dir.mkdir()
+
+    document_path = (
+        documents_dir / filename
+    )
+
+    document_path.write_bytes(
+        b"old document",
+    )
+
+    original_resolve = Path.resolve
+
+    def fake_resolve(path: Path) -> Path:
+        if path.name == "document_service.py":
+            return (
+                tmp_path
+                / "ragkit"
+                / "services"
+                / "document_service.py"
+            )
+
+        return original_resolve(path)
+
+    monkeypatch.setattr(
+        Path,
+        "resolve",
+        fake_resolve,
+    )
+
+    result = service.upload_document(
+        filename=filename,
+        content=b"new document",
+    )
+
+    assert vector_store.deleted_document_ids == [
+        old_document_id,
+    ]
+
+    assert document_indexer.index_count == 1
+
+    documents = service.list_documents()
+
+    assert len(documents) == 1
+    assert documents[0].filename == filename
+    assert documents[0].id == new_document_id
+
+    assert result.id == new_document_id
+
+    assert document_path.read_bytes() == b"new document"
+
+    assert bm25_searcher.rebuild_count == 2
+
+
+def test_upload_document_replaces_existing_filename_case_insensitively(
+    tmp_path: Path,
+    monkeypatch,
+):
+    """
+    Verify filenames are matched case-insensitively when
+    replacing an existing document.
+    """
+
+    old_document_id = uuid4()
+    new_document_id = uuid4()
+
+    old_chunk = create_chunk(
+        old_document_id,
+        "Resume.docx",
+        0,
+    )
+
+    vector_store = FakeVectorStore(
+        [old_chunk],
+    )
+
+    bm25_searcher = FakeBM25Searcher()
+
+    document_indexer = FakeDocumentIndexer(
+        vector_store=vector_store,
+        document_id=new_document_id,
+    )
+
+    service = DocumentService(
+        vector_store=vector_store,
+        document_indexer=document_indexer,
+        bm25_searcher=bm25_searcher,
+    )
+
+    documents_dir = tmp_path / "documents"
+    documents_dir.mkdir()
+
+    document_path = (
+        documents_dir / "Resume.docx"
+    )
+
+    document_path.write_bytes(
+        b"old document",
+    )
+
+    original_resolve = Path.resolve
+
+    def fake_resolve(path: Path) -> Path:
+        if path.name == "document_service.py":
+            return (
+                tmp_path
+                / "ragkit"
+                / "services"
+                / "document_service.py"
+            )
+
+        return original_resolve(path)
+
+    monkeypatch.setattr(
+        Path,
+        "resolve",
+        fake_resolve,
+    )
+
+    result = service.upload_document(
+        filename="resume.DOCX",
+        content=b"new document",
+    )
+
+    assert vector_store.deleted_document_ids == [
+        old_document_id,
+    ]
+
+    assert result.id == new_document_id
+
+    assert len(service.list_documents()) == 1

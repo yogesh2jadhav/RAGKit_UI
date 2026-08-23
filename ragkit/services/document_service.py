@@ -8,6 +8,7 @@ Responsibilities
 - List indexed documents.
 - Group chunks by document ID.
 - Upload and index documents.
+- Replace documents with the same filename.
 - Delete indexed documents.
 - Rebuild BM25 after indexing or deletion.
 
@@ -98,9 +99,10 @@ class DocumentService:
         content: bytes,
     ) -> DocumentInfo:
         """
-        Save an uploaded .docx document permanently,
-        index only the uploaded document, rebuild BM25,
-        and return its indexed information.
+        Save and index a .docx document.
+
+        If a document with the same filename already exists,
+        it is replaced before the new document is indexed.
         """
 
         if not filename:
@@ -123,6 +125,23 @@ class DocumentService:
                 "BM25 searcher is not configured."
             )
 
+        safe_filename = Path(filename).name
+
+        #
+        # Replace an existing document with the same filename.
+        #
+        existing_document = self._find_document_by_filename(
+            safe_filename,
+        )
+
+        if existing_document is not None:
+            self.delete_document(
+                document_id=existing_document.id,
+            )
+
+        #
+        # Determine permanent document storage.
+        #
         project_root = Path(__file__).resolve().parents[2]
 
         documents_dir = project_root / "documents"
@@ -131,8 +150,6 @@ class DocumentService:
             parents=True,
             exist_ok=True,
         )
-
-        safe_filename = Path(filename).name
 
         document_path = documents_dir / safe_filename
 
@@ -206,9 +223,6 @@ class DocumentService:
                 "BM25 searcher is not configured."
             )
 
-        #
-        # Find the document before deleting its chunks.
-        #
         document = self._find_document(
             document_id,
         )
@@ -254,6 +268,24 @@ class DocumentService:
 
         for document in self.list_documents():
             if document.id == document_id:
+                return document
+
+        return None
+
+    def _find_document_by_filename(
+        self,
+        filename: str,
+    ) -> DocumentInfo | None:
+        """
+        Find an indexed document by filename.
+
+        Filename comparison is case-insensitive.
+        """
+
+        normalized_filename = filename.lower()
+
+        for document in self.list_documents():
+            if document.filename.lower() == normalized_filename:
                 return document
 
         return None
