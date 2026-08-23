@@ -67,8 +67,54 @@ body {
     font-size: 20px;
 }
 
+.upload-section {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+
+    margin-bottom: 12px;
+}
+
+.upload-section input[type="file"] {
+    width: 100%;
+    min-width: 0;
+
+    font-size: 12px;
+}
+
+.upload-status {
+    margin-bottom: 12px;
+
+    padding: 9px 10px;
+
+    border-radius: 7px;
+
+    font-size: 12px;
+}
+
+.upload-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.upload-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
 .documents {
     margin-top: 16px;
+}
+
+.document-row {
+    display: flex;
+    align-items: stretch;
+
+    gap: 8px;
+
+    margin-bottom: 10px;
 }
 
 .document-option {
@@ -82,13 +128,21 @@ body {
     border: 1px solid #e5e7eb;
     border-radius: 8px;
 
-    margin-bottom: 10px;
+    margin-bottom: 0;
 
     cursor: pointer;
+
+    flex: 1;
+
+    min-width: 0;
 }
 
 .document-option:hover {
     background: #f9fafb;
+}
+
+.document-details {
+    min-width: 0;
 }
 
 .document-name {
@@ -106,6 +160,19 @@ body {
 
 .all-option {
     background: #f3f4f6;
+}
+
+.delete-button {
+    background: #fee2e2;
+    color: #b91c1c;
+
+    padding: 8px 10px;
+
+    align-self: stretch;
+}
+
+.delete-button:hover {
+    background: #fecaca;
 }
 
 textarea {
@@ -246,7 +313,21 @@ button {
 }
 
 @media (max-width: 800px) {
+
     .main {
         grid-template-columns: 1fr;
+    }
+
+    .upload-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .document-row {
+        align-items: stretch;
+    }
+
+    .delete-button {
+        padding: 8px;
     }
 }

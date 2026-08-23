@@ -1,374 +1,686 @@
-const documentsContainer =
-    document.getElementById("documents");
+document.addEventListener("DOMContentLoaded", () => {
 
-const selectAll =
-    document.getElementById("selectAll");
+    const documentsContainer =
+        document.getElementById("documents");
 
-const refreshDocuments =
-    document.getElementById("refreshDocuments");
+    const selectAll =
+        document.getElementById("selectAll");
 
-const question =
-    document.getElementById("question");
+    const refreshDocuments =
+        document.getElementById("refreshDocuments");
 
-const askButton =
-    document.getElementById("askButton");
+    const documentFile =
+        document.getElementById("documentFile");
 
-const selectionInfo =
-    document.getElementById("selectionInfo");
+    const uploadButton =
+        document.getElementById("uploadButton");
 
-const answerSection =
-    document.getElementById("answerSection");
+    const uploadStatus =
+        document.getElementById("uploadStatus");
 
-const answer =
-    document.getElementById("answer");
+    const question =
+        document.getElementById("question");
 
-const sources =
-    document.getElementById("sources");
+    const askButton =
+        document.getElementById("askButton");
 
-const error =
-    document.getElementById("error");
+    const selectionInfo =
+        document.getElementById("selectionInfo");
+
+    const answerSection =
+        document.getElementById("answerSection");
+
+    const answer =
+        document.getElementById("answer");
+
+    const sources =
+        document.getElementById("sources");
+
+    const error =
+        document.getElementById("error");
 
 
-async function loadDocuments() {
-
-    documentsContainer.innerHTML =
-        '<p class="loading">Loading documents...</p>';
-
-    try {
-
-        const response =
-            await fetch("/api/documents/");
-
-        if (!response.ok) {
-            throw new Error(
-                "Failed to load documents."
-            );
-        }
-
-        const documents =
-            await response.json();
-
-        renderDocuments(documents);
-
-    } catch (err) {
+    /*
+     * Load indexed documents.
+     */
+    async function loadDocuments() {
 
         documentsContainer.innerHTML =
-            `<p class="error">${escapeHtml(err.message)}</p>`;
-    }
-}
+            '<p class="loading">Loading documents...</p>';
 
+        try {
 
-function renderDocuments(documents) {
+            const response =
+                await fetch("/api/documents/");
 
-    documentsContainer.innerHTML = "";
-
-    if (documents.length === 0) {
-
-        documentsContainer.innerHTML =
-            '<p class="loading">No documents available.</p>';
-
-        return;
-    }
-
-    documents.forEach(doc => {
-
-        const label =
-            document.createElement("label");
-
-        label.className =
-            "document-option";
-
-        label.innerHTML = `
-            <input
-                type="checkbox"
-                class="document-checkbox"
-                value="${escapeHtml(doc.id)}"
-            >
-
-            <span>
-                <span class="document-name">
-                    ${escapeHtml(doc.filename)}
-                </span>
-
-                <span class="chunk-count">
-                    ${doc.chunk_count} chunks
-                </span>
-            </span>
-        `;
-
-        documentsContainer.appendChild(label);
-    });
-
-    document
-        .querySelectorAll(".document-checkbox")
-        .forEach(checkbox => {
-
-            checkbox.addEventListener(
-                "change",
-                updateSelection
-            );
-        });
-
-    updateSelection();
-}
-
-
-function getSelectedDocumentIds() {
-
-    return Array.from(
-        document.querySelectorAll(
-            ".document-checkbox:checked"
-        )
-    ).map(
-        checkbox => checkbox.value
-    );
-}
-
-
-function updateSelection() {
-
-    const selected =
-        getSelectedDocumentIds();
-
-    if (selectAll.checked) {
-
-        selectionInfo.textContent =
-            "Search all documents";
-
-        return;
-    }
-
-    if (selected.length === 0) {
-
-        selectionInfo.textContent =
-            "No document selected";
-
-        return;
-    }
-
-    selectionInfo.textContent =
-        `${selected.length} document${
-            selected.length === 1 ? "" : "s"
-        } selected`;
-}
-
-
-selectAll.addEventListener(
-    "change",
-    () => {
-
-        const checkboxes =
-            document.querySelectorAll(
-                ".document-checkbox"
-            );
-
-        checkboxes.forEach(
-            checkbox => {
-                checkbox.checked = false;
+            if (!response.ok) {
+                throw new Error(
+                    "Failed to load documents."
+                );
             }
-        );
 
-        updateSelection();
-    }
-);
+            const documents =
+                await response.json();
 
+            renderDocuments(documents);
 
-document.addEventListener(
-    "change",
-    event => {
+        } catch (err) {
 
-        if (
-            event.target.classList.contains(
-                "document-checkbox"
-            )
-        ) {
-            selectAll.checked = false;
-            updateSelection();
+            documentsContainer.innerHTML =
+                `<p class="error">${escapeHtml(err.message)}</p>`;
         }
     }
-);
 
 
-refreshDocuments.addEventListener(
-    "click",
-    loadDocuments
-);
+    /*
+     * Render documents and their delete buttons.
+     */
+    function renderDocuments(documents) {
 
+        documentsContainer.innerHTML = "";
 
-askButton.addEventListener(
-    "click",
-    askQuestion
-);
+        if (documents.length === 0) {
 
+            documentsContainer.innerHTML =
+                '<p class="loading">No documents available.</p>';
 
-async function askQuestion() {
+            updateSelection();
 
-    const query =
-        question.value.trim();
+            return;
+        }
 
-    if (!query) {
+        documents.forEach(doc => {
 
-        showError(
-            "Please enter a question."
-        );
+            const container =
+                document.createElement("div");
 
-        return;
-    }
+            container.className =
+                "document-row";
 
-    const selected =
-        getSelectedDocumentIds();
+            const label =
+                document.createElement("label");
 
-    if (
-        !selectAll.checked &&
-        selected.length === 0
-    ) {
+            label.className =
+                "document-option";
 
-        showError(
-            "Select at least one document or choose Search all documents."
-        );
+            const checkbox =
+                document.createElement("input");
 
-        return;
-    }
+            checkbox.type =
+                "checkbox";
 
-    hideError();
+            checkbox.className =
+                "document-checkbox";
 
-    askButton.disabled = true;
+            checkbox.value =
+                doc.id;
 
-    askButton.textContent =
-        "Asking...";
+            const details =
+                document.createElement("span");
 
-    answerSection.classList.add(
-        "hidden"
-    );
+            details.className =
+                "document-details";
 
-    try {
+            const name =
+                document.createElement("span");
 
-        const payload = {
-            question: query,
-            document_ids:
-                selectAll.checked
-                    ? null
-                    : selected
-        };
+            name.className =
+                "document-name";
 
-        const response =
-            await fetch(
-                "/api/chat",
-                {
-                    method: "POST",
+            name.textContent =
+                doc.filename;
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+            const chunkCount =
+                document.createElement("span");
 
-                    body:
-                        JSON.stringify(payload)
+            chunkCount.className =
+                "chunk-count";
+
+            chunkCount.textContent =
+                `${doc.chunk_count} chunks`;
+
+            details.appendChild(name);
+            details.appendChild(chunkCount);
+
+            label.appendChild(checkbox);
+            label.appendChild(details);
+
+            const deleteButton =
+                document.createElement("button");
+
+            deleteButton.type =
+                "button";
+
+            deleteButton.className =
+                "delete-button";
+
+            deleteButton.textContent =
+                "Delete";
+
+            deleteButton.addEventListener(
+                "click",
+                () => {
+                    deleteDocument(
+                        doc.id,
+                        doc.filename
+                    );
                 }
             );
 
-        const data =
-            await response.json();
+            checkbox.addEventListener(
+                "change",
+                () => {
 
-        if (!response.ok) {
+                    selectAll.checked =
+                        false;
 
-            throw new Error(
-                data.detail ||
-                "Request failed."
+                    updateSelection();
+                }
             );
-        }
 
-        renderAnswer(data);
+            container.appendChild(label);
+            container.appendChild(deleteButton);
 
-    } catch (err) {
-
-        showError(err.message);
-
-    } finally {
-
-        askButton.disabled = false;
-
-        askButton.textContent =
-            "Ask";
-    }
-}
-
-
-function renderAnswer(data) {
-
-    answer.textContent =
-        data.answer || "";
-
-    sources.innerHTML = "";
-
-    if (
-        data.sources &&
-        data.sources.length > 0
-    ) {
-
-        data.sources.forEach(source => {
-
-            const div =
-                document.createElement("div");
-
-            div.className =
-                "source";
-
-            div.innerHTML = `
-                <div class="source-name">
-                    ${escapeHtml(source.filename)}
-                </div>
-
-                <div class="source-chunk">
-                    Chunk:
-                    ${escapeHtml(source.chunk_id)}
-                </div>
-            `;
-
-            sources.appendChild(div);
+            documentsContainer.appendChild(
+                container
+            );
         });
 
-    } else {
-
-        sources.innerHTML =
-            '<p class="loading">No sources returned.</p>';
+        updateSelection();
     }
 
-    answerSection.classList.remove(
-        "hidden"
+
+    /*
+     * Return selected document IDs.
+     */
+    function getSelectedDocumentIds() {
+
+        return Array.from(
+            document.querySelectorAll(
+                ".document-checkbox:checked"
+            )
+        ).map(
+            checkbox => checkbox.value
+        );
+    }
+
+
+    /*
+     * Update the selection message.
+     */
+    function updateSelection() {
+
+        const selected =
+            getSelectedDocumentIds();
+
+        if (selectAll.checked) {
+
+            selectionInfo.textContent =
+                "Search all documents";
+
+            return;
+        }
+
+        if (selected.length === 0) {
+
+            selectionInfo.textContent =
+                "No document selected";
+
+            return;
+        }
+
+        selectionInfo.textContent =
+            `${selected.length} document${
+                selected.length === 1 ? "" : "s"
+            } selected`;
+    }
+
+
+    /*
+     * Search all documents.
+     */
+    selectAll.addEventListener(
+        "change",
+        () => {
+
+            if (selectAll.checked) {
+
+                document
+                    .querySelectorAll(
+                        ".document-checkbox"
+                    )
+                    .forEach(
+                        checkbox => {
+                            checkbox.checked = false;
+                        }
+                    );
+            }
+
+            updateSelection();
+        }
     );
-}
 
 
-function showError(message) {
-
-    error.textContent =
-        message;
-
-    error.classList.remove(
-        "hidden"
+    /*
+     * Refresh document list.
+     */
+    refreshDocuments.addEventListener(
+        "click",
+        loadDocuments
     );
-}
 
 
-function hideError() {
-
-    error.classList.add(
-        "hidden"
+    /*
+     * Upload button.
+     */
+    uploadButton.addEventListener(
+        "click",
+        uploadDocument
     );
-}
 
 
-function escapeHtml(value) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent =
-        String(value);
-
-    return div.innerHTML;
-}
+    /*
+     * Ask button.
+     */
+    askButton.addEventListener(
+        "click",
+        askQuestion
+    );
 
 
-loadDocuments();
+    /*
+     * Allow Cmd/Ctrl + Enter to submit a question.
+     */
+    question.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter" &&
+                (event.metaKey || event.ctrlKey)
+            ) {
+                event.preventDefault();
+
+                askQuestion();
+            }
+        }
+    );
+
+
+    /*
+     * Upload a document.
+     */
+    async function uploadDocument() {
+
+        const file =
+            documentFile.files[0];
+
+        if (!file) {
+
+            showUploadStatus(
+                "Please select a .docx file.",
+                true
+            );
+
+            return;
+        }
+
+        if (
+            !file.name
+                .toLowerCase()
+                .endsWith(".docx")
+        ) {
+
+            showUploadStatus(
+                "Only .docx files are supported.",
+                true
+            );
+
+            return;
+        }
+
+        hideError();
+
+        uploadButton.disabled = true;
+
+        uploadButton.textContent =
+            "Uploading...";
+
+        showUploadStatus(
+            "Uploading document...",
+            false
+        );
+
+        try {
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "file",
+                file
+            );
+
+            const response =
+                await fetch(
+                    "/api/documents/upload",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail ||
+                    "Document upload failed."
+                );
+            }
+
+            documentFile.value = "";
+
+            showUploadStatus(
+                `${data.filename} uploaded successfully.`,
+                false
+            );
+
+            await loadDocuments();
+
+        } catch (err) {
+
+            showUploadStatus(
+                err.message,
+                true
+            );
+
+        } finally {
+
+            uploadButton.disabled = false;
+
+            uploadButton.textContent =
+                "Upload";
+        }
+    }
+
+
+    /*
+     * Delete a document.
+     */
+    async function deleteDocument(
+        documentId,
+        filename
+    ) {
+
+        const confirmed =
+            window.confirm(
+                `Delete "${filename}"?\n\n` +
+                "This will remove the document from " +
+                "the index and delete the original file."
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        hideError();
+
+        try {
+
+            const response =
+                await fetch(
+                    `/api/documents/${encodeURIComponent(documentId)}`,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+            if (!response.ok) {
+
+                let message =
+                    "Failed to delete document.";
+
+                try {
+
+                    const data =
+                        await response.json();
+
+                    message =
+                        data.detail || message;
+
+                } catch (_) {
+                    // Response may not contain JSON.
+                }
+
+                throw new Error(message);
+            }
+
+            await loadDocuments();
+
+        } catch (err) {
+
+            showError(err.message);
+        }
+    }
+
+
+    /*
+     * Ask the RAG question.
+     */
+    async function askQuestion() {
+
+        const query =
+            question.value.trim();
+
+        if (!query) {
+
+            showError(
+                "Please enter a question."
+            );
+
+            return;
+        }
+
+        const selected =
+            getSelectedDocumentIds();
+
+        if (
+            !selectAll.checked &&
+            selected.length === 0
+        ) {
+
+            showError(
+                "Select at least one document or choose Search all documents."
+            );
+
+            return;
+        }
+
+        hideError();
+
+        askButton.disabled = true;
+
+        askButton.textContent =
+            "Asking...";
+
+        answerSection.classList.add(
+            "hidden"
+        );
+
+        try {
+
+            const payload = {
+                question: query,
+                document_ids:
+                    selectAll.checked
+                        ? null
+                        : selected
+            };
+
+            const response =
+                await fetch(
+                    "/api/chat",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(payload)
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail ||
+                    "Request failed."
+                );
+            }
+
+            renderAnswer(data);
+
+        } catch (err) {
+
+            showError(err.message);
+
+        } finally {
+
+            askButton.disabled = false;
+
+            askButton.textContent =
+                "Ask";
+        }
+    }
+
+
+    /*
+     * Render RAG answer and sources.
+     */
+    function renderAnswer(data) {
+
+        answer.textContent =
+            data.answer || "";
+
+        sources.innerHTML = "";
+
+        if (
+            data.sources &&
+            data.sources.length > 0
+        ) {
+
+            data.sources.forEach(source => {
+
+                const div =
+                    document.createElement("div");
+
+                div.className =
+                    "source";
+
+                const sourceName =
+                    document.createElement("div");
+
+                sourceName.className =
+                    "source-name";
+
+                sourceName.textContent =
+                    source.filename;
+
+                const sourceChunk =
+                    document.createElement("div");
+
+                sourceChunk.className =
+                    "source-chunk";
+
+                sourceChunk.textContent =
+                    `Chunk: ${source.chunk_id}`;
+
+                div.appendChild(
+                    sourceName
+                );
+
+                div.appendChild(
+                    sourceChunk
+                );
+
+                sources.appendChild(div);
+            });
+
+        } else {
+
+            sources.innerHTML =
+                '<p class="loading">No sources returned.</p>';
+        }
+
+        answerSection.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    /*
+     * Show an application error.
+     */
+    function showError(message) {
+
+        error.textContent =
+            message;
+
+        error.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    /*
+     * Hide an application error.
+     */
+    function hideError() {
+
+        error.classList.add(
+            "hidden"
+        );
+    }
+
+
+    /*
+     * Show upload status.
+     */
+    function showUploadStatus(
+        message,
+        isError
+    ) {
+
+        uploadStatus.textContent =
+            message;
+
+        uploadStatus.classList.remove(
+            "hidden"
+        );
+
+        uploadStatus.classList.toggle(
+            "upload-error",
+            isError
+        );
+
+        uploadStatus.classList.toggle(
+            "upload-success",
+            !isError
+        );
+    }
+
+
+    /*
+     * Initial document load.
+     */
+    loadDocuments();
+});
