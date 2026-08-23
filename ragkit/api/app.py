@@ -7,6 +7,7 @@ Responsibilities
 ----------------
 - Create application dependencies.
 - Register API routes.
+- Serve the RAGKit web UI.
 
 Does NOT
 --------
@@ -15,7 +16,13 @@ Does NOT
 """
 
 from __future__ import annotations
+
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
 from ragkit.api.chat import create_chat_router
 from ragkit.api.documents import create_document_router
 from ragkit.config.server_config import default_server_config
@@ -33,6 +40,43 @@ def create_app(
     """
     Create and configure the RAGKit FastAPI application.
     """
+
+    app = FastAPI(
+        title="RAGKit API",
+        version="1.0.0",
+    )
+
+    # ------------------------------------------------------------------
+    # Web UI
+    # ------------------------------------------------------------------
+
+    base_dir = Path(__file__).resolve().parents[2]
+
+    static_dir = base_dir / "static"
+
+    if not static_dir.exists():
+        raise RuntimeError(
+            f"Static directory does not exist: {static_dir}"
+        )
+
+    app.mount(
+        "/static",
+        StaticFiles(directory=static_dir),
+        name="static",
+    )
+
+    @app.get("/")
+    def serve_ui():
+        """
+        Serve the RAGKit web UI.
+        """
+        return FileResponse(
+            static_dir / "index.html"
+        )
+
+    # ------------------------------------------------------------------
+    # RAGKit dependencies
+    # ------------------------------------------------------------------
 
     config = default_server_config()
 
@@ -54,10 +98,9 @@ def create_app(
             top_k=config.retrieval_top_k,
         )
 
-    app = FastAPI(
-        title="RAGKit API",
-        version="1.0.0",
-    )
+    # ------------------------------------------------------------------
+    # API routes
+    # ------------------------------------------------------------------
 
     app.include_router(
         create_document_router(

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>RAGKit</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+        <div>
+            <h1>RAGKit</h1>
+            <p>Document Question Answering</p>
+        </div>
+    </header>
+
+    <main class="main">
+
+        <section class="documents-panel">
+
+            <div class="section-header">
+                <h2>Documents</h2>
+
+                <button
+                    id="refreshDocuments"
+                    class="secondary-button"
+                >
+                    Refresh
+                </button>
+            </div>
+
+            <label class="document-option all-option">
+                <input
+                    type="checkbox"
+                    id="selectAll"
+                >
+
+                <span>
+                    <strong>Search all documents</strong>
+                </span>
+            </label>
+
+            <div
+                id="documents"
+                class="documents"
+            >
+                <p class="loading">
+                    Loading documents...
+                </p>
+            </div>
+
+        </section>
+
+        <section class="chat-panel">
+
+            <div class="section-header">
+                <h2>Ask a question</h2>
+            </div>
+
+            <textarea
+                id="question"
+                placeholder="Ask something about the selected documents..."
+                rows="5"
+            ></textarea>
+
+            <div class="ask-row">
+
+                <span
+                    id="selectionInfo"
+                    class="selection-info"
+                >
+                    Search all documents
+                </span>
+
+                <button
+                    id="askButton"
+                    class="primary-button"
+                >
+                    Ask
+                </button>
+
+            </div>
+
+            <div
+                id="error"
+                class="error hidden"
+            ></div>
+
+            <section
+                id="answerSection"
+                class="answer-section hidden"
+            >
+
+                <h2>Answer</h2>
+
+                <div
+                    id="answer"
+                    class="answer"
+                ></div>
+
+                <h3>Sources</h3>
+
+                <div
+                    id="sources"
+                    class="sources"
+                ></div>
+
+            </section>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>
