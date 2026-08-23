@@ -108,7 +108,14 @@ class FakeVectorStore(VectorStore):
     """
     Fake VectorStore used for unit testing.
     """
-
+    def delete_document(
+        self,
+        document_id: UUID,
+    ) -> None:
+        """
+        Fake implementation required by VectorStore.
+        """
+        pass
     def __init__(self) -> None:
 
         self.add_called = False

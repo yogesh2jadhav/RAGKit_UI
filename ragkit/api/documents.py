@@ -7,6 +7,7 @@ Responsibilities
 ----------------
 - List indexed documents.
 - Upload documents for indexing.
+- Delete indexed documents.
 
 Does NOT
 --------
@@ -15,6 +16,8 @@ Does NOT
 """
 
 from __future__ import annotations
+
+from uuid import UUID
 
 from fastapi import APIRouter, File, UploadFile
 
@@ -66,6 +69,21 @@ def create_document_router(
         return document_service.upload_document(
             filename=file.filename,
             content=content,
+        )
+
+    @router.delete(
+        "/{document_id}",
+        status_code=204,
+    )
+    def delete_document(
+        document_id: UUID,
+    ) -> None:
+        """
+        Delete an indexed document and its source file.
+        """
+
+        document_service.delete_document(
+            document_id=document_id,
         )
 
     return router

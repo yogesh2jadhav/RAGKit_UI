@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from typing import Any
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from ragkit.config.retrieval_config import RetrievalConfig
 from ragkit.embeddings.embedder import Embedder
@@ -49,6 +49,15 @@ class FakeVectorStore(VectorStore):
         embeddings,
     ) -> None:
         raise NotImplementedError
+
+    def delete_document(
+        self,
+        document_id: UUID,
+    ) -> None:
+        """
+        Fake implementation required by VectorStore.
+        """
+        pass
 
     def search(
         self,

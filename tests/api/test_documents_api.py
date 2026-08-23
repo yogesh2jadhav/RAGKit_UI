@@ -1,24 +1,28 @@
+from uuid import UUID, uuid4
+
 from fastapi.testclient import TestClient
 
 from ragkit.api.app import create_app
 from ragkit.models.document_info import DocumentInfo
-from ragkit.services.rag_service_factory import create_rag_service
+
 
 class FakeDocumentService:
     """
     Fake DocumentService used by API tests.
     """
 
+    def __init__(self) -> None:
+        self.document_id = uuid4()
+        self.deleted_document_id: UUID | None = None
+
     def list_documents(self) -> list[DocumentInfo]:
         """
         Return fake indexed documents.
         """
 
-        from uuid import uuid4
-
         return [
             DocumentInfo(
-                id=uuid4(),
+                id=self.document_id,
                 filename="Yogesh Ashok 007.docx",
                 chunk_count=10,
             ),
@@ -29,13 +33,25 @@ class FakeDocumentService:
             ),
         ]
 
+    def delete_document(
+        self,
+        *,
+        document_id: UUID,
+    ) -> None:
+        """
+        Record the document deletion request.
+        """
 
-def test_list_documents_endpoint(monkeypatch):
-    """
-    Verify GET /api/documents returns indexed documents.
-    """
+        self.deleted_document_id = document_id
 
-    fake_service = FakeDocumentService()
+
+def create_test_app(
+    monkeypatch,
+    fake_service: FakeDocumentService,
+):
+    """
+    Create an application using the fake document service.
+    """
 
     from ragkit.api import app as app_module
 
@@ -45,7 +61,20 @@ def test_list_documents_endpoint(monkeypatch):
         lambda **kwargs: fake_service,
     )
 
-    app = create_app()
+    return create_app()
+
+
+def test_list_documents_endpoint(monkeypatch):
+    """
+    Verify GET /api/documents returns indexed documents.
+    """
+
+    fake_service = FakeDocumentService()
+
+    app = create_test_app(
+        monkeypatch,
+        fake_service,
+    )
 
     client = TestClient(app)
 
@@ -64,3 +93,52 @@ def test_list_documents_endpoint(monkeypatch):
 
     assert data[1]["filename"] == "Resume.docx"
     assert data[1]["chunk_count"] == 5
+
+
+def test_delete_document_endpoint(monkeypatch):
+    """
+    Verify DELETE /api/documents/{document_id}
+    passes the document ID to DocumentService.
+    """
+
+    fake_service = FakeDocumentService()
+
+    app = create_test_app(
+        monkeypatch,
+        fake_service,
+    )
+
+    client = TestClient(app)
+
+    document_id = fake_service.document_id
+
+    response = client.delete(
+        f"/api/documents/{document_id}",
+    )
+
+    assert response.status_code == 204
+
+    assert fake_service.deleted_document_id == document_id
+
+
+def test_delete_document_rejects_invalid_uuid(monkeypatch):
+    """
+    Verify DELETE rejects an invalid document ID.
+    """
+
+    fake_service = FakeDocumentService()
+
+    app = create_test_app(
+        monkeypatch,
+        fake_service,
+    )
+
+    client = TestClient(app)
+
+    response = client.delete(
+        "/api/documents/not-a-uuid",
+    )
+
+    assert response.status_code == 422
+
+    assert fake_service.deleted_document_id is None

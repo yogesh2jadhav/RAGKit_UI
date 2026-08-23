@@ -8,7 +8,8 @@ Responsibilities
 - List indexed documents.
 - Group chunks by document ID.
 - Upload and index documents.
-- Rebuild BM25 after indexing.
+- Delete indexed documents.
+- Rebuild BM25 after indexing or deletion.
 
 Does NOT
 --------
@@ -19,8 +20,7 @@ Does NOT
 """
 
 from __future__ import annotations
-import tempfile
-from pathlib import Path
+
 import tempfile
 from pathlib import Path
 from uuid import UUID
@@ -47,17 +47,6 @@ class DocumentService:
     ) -> None:
         """
         Initialize the DocumentService.
-
-        Parameters
-        ----------
-        vector_store
-            Vector store containing indexed chunks.
-
-        document_indexer
-            Indexer used to process and store uploaded documents.
-
-        bm25_searcher
-            BM25 searcher whose index is rebuilt after uploads.
         """
 
         self._vector_store = vector_store
@@ -69,11 +58,6 @@ class DocumentService:
         Return all documents currently represented in the index.
 
         Documents are reconstructed from indexed chunks.
-
-        Returns
-        -------
-        list[DocumentInfo]
-            Indexed documents sorted by filename.
         """
 
         documents: dict[UUID, dict[str, object]] = {}
@@ -108,10 +92,10 @@ class DocumentService:
         return result
 
     def upload_document(
-            self,
-            *,
-            filename: str,
-            content: bytes,
+        self,
+        *,
+        filename: str,
+        content: bytes,
     ) -> DocumentInfo:
         """
         Save an uploaded .docx document permanently,
@@ -163,9 +147,7 @@ class DocumentService:
         #
         with tempfile.TemporaryDirectory() as temp_dir:
 
-            staged_path = (
-                    Path(temp_dir) / safe_filename
-            )
+            staged_path = Path(temp_dir) / safe_filename
 
             staged_path.write_bytes(content)
 
@@ -202,6 +184,79 @@ class DocumentService:
             )
 
         return matching_documents[0]
+
+    def delete_document(
+        self,
+        *,
+        document_id: UUID,
+    ) -> None:
+        """
+        Delete a document from the index and permanent storage.
+
+        Steps
+        -----
+        1. Find the document in the index.
+        2. Delete its chunks from the vector store.
+        3. Delete the original .docx file.
+        4. Rebuild BM25.
+        """
+
+        if self._bm25_searcher is None:
+            raise RuntimeError(
+                "BM25 searcher is not configured."
+            )
+
+        #
+        # Find the document before deleting its chunks.
+        #
+        document = self._find_document(
+            document_id,
+        )
+
+        if document is None:
+            raise ValueError(
+                f"Document '{document_id}' was not found."
+            )
+
+        #
+        # Delete all chunks belonging to this document.
+        #
+        self._vector_store.delete_document(
+            document_id,
+        )
+
+        #
+        # Delete the original source document.
+        #
+        project_root = Path(__file__).resolve().parents[2]
+
+        documents_dir = project_root / "documents"
+
+        document_path = (
+            documents_dir / document.filename
+        )
+
+        if document_path.exists():
+            document_path.unlink()
+
+        #
+        # Rebuild the same BM25 instance used by RAGService.
+        #
+        self._bm25_searcher.rebuild()
+
+    def _find_document(
+        self,
+        document_id: UUID,
+    ) -> DocumentInfo | None:
+        """
+        Find an indexed document by ID.
+        """
+
+        for document in self.list_documents():
+            if document.id == document_id:
+                return document
+
+        return None
 
     @staticmethod
     def _get_filename(

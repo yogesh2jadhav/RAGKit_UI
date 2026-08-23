@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from pathlib import Path
 from uuid import UUID, uuid4
 
 from ragkit.models.chunk import Chunk
@@ -19,6 +20,7 @@ class FakeVectorStore(VectorStore):
         chunks: Iterable[Chunk],
     ) -> None:
         self._chunks = list(chunks)
+        self.deleted_document_ids: list[UUID] = []
 
     def add(
         self,
@@ -46,6 +48,40 @@ class FakeVectorStore(VectorStore):
     def clear(self) -> None:
         self._chunks.clear()
 
+    def delete_document(
+        self,
+        document_id: UUID,
+    ) -> None:
+        """
+        Delete all chunks belonging to a document.
+        """
+
+        self.deleted_document_ids.append(
+            document_id,
+        )
+
+        self._chunks = [
+            chunk
+            for chunk in self._chunks
+            if chunk.document_id != document_id
+        ]
+
+
+class FakeBM25Searcher:
+    """
+    Fake BM25 searcher used for DocumentService tests.
+    """
+
+    def __init__(self) -> None:
+        self.rebuild_count = 0
+
+    def rebuild(self) -> None:
+        """
+        Record BM25 rebuild calls.
+        """
+
+        self.rebuild_count += 1
+
 
 def create_chunk(
     document_id: UUID,
@@ -68,7 +104,10 @@ def create_chunk(
         metadata={
             "filename": filename,
             "uri": f"/documents/{filename}",
-            "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "mime_type": (
+                "application/vnd.openxmlformats-officedocument."
+                "wordprocessingml.document"
+            ),
         },
     )
 
@@ -235,3 +274,185 @@ def test_list_documents_falls_back_to_uri():
 
     assert len(documents) == 1
     assert documents[0].filename == "Resume.docx"
+
+
+def test_delete_document_removes_vector_chunks():
+    """
+    Verify deleting a document removes only its chunks
+    from the vector store.
+    """
+
+    document_id = uuid4()
+    other_document_id = uuid4()
+
+    chunks = [
+        create_chunk(
+            document_id,
+            "Yogesh Ashok 007.docx",
+            0,
+        ),
+        create_chunk(
+            document_id,
+            "Yogesh Ashok 007.docx",
+            1,
+        ),
+        create_chunk(
+            other_document_id,
+            "Ashish Pawar (1).docx",
+            0,
+        ),
+    ]
+
+    vector_store = FakeVectorStore(chunks)
+
+    bm25_searcher = FakeBM25Searcher()
+
+    service = DocumentService(
+        vector_store=vector_store,
+        bm25_searcher=bm25_searcher,
+    )
+
+    service.delete_document(
+        document_id=document_id,
+    )
+
+    assert vector_store.deleted_document_ids == [
+        document_id,
+    ]
+
+    remaining_chunks = list(
+        vector_store.iter_chunks(),
+    )
+
+    assert len(remaining_chunks) == 1
+    assert remaining_chunks[0].document_id == other_document_id
+
+
+def test_delete_document_deletes_physical_file(
+    tmp_path: Path,
+    monkeypatch,
+):
+    """
+    Verify deleting a document removes its original
+    physical .docx file.
+    """
+
+    document_id = uuid4()
+
+    chunk = create_chunk(
+        document_id,
+        "Yogesh Ashok 007.docx",
+        0,
+    )
+
+    vector_store = FakeVectorStore(
+        [chunk],
+    )
+
+    bm25_searcher = FakeBM25Searcher()
+
+    service = DocumentService(
+        vector_store=vector_store,
+        bm25_searcher=bm25_searcher,
+    )
+
+    documents_dir = tmp_path / "documents"
+
+    documents_dir.mkdir()
+
+    document_path = (
+        documents_dir / "Yogesh Ashok 007.docx"
+    )
+
+    document_path.write_bytes(
+        b"test document",
+    )
+
+    #
+    # Patch the Path used by DocumentService so that
+    # its project root resolves to tmp_path.
+    #
+    original_resolve = Path.resolve
+
+    def fake_resolve(path: Path) -> Path:
+        if path.name == "document_service.py":
+            return (
+                tmp_path
+                / "ragkit"
+                / "services"
+                / "document_service.py"
+            )
+
+        return original_resolve(path)
+
+    monkeypatch.setattr(
+        Path,
+        "resolve",
+        fake_resolve,
+    )
+
+    assert document_path.exists()
+
+    service.delete_document(
+        document_id=document_id,
+    )
+
+    assert not document_path.exists()
+
+def test_delete_document_rebuilds_bm25():
+    """
+    Verify deleting a document rebuilds BM25.
+    """
+
+    document_id = uuid4()
+
+    chunks = [
+        create_chunk(
+            document_id,
+            "Yogesh Ashok 007.docx",
+            0,
+        ),
+    ]
+
+    vector_store = FakeVectorStore(chunks)
+
+    bm25_searcher = FakeBM25Searcher()
+
+    service = DocumentService(
+        vector_store=vector_store,
+        bm25_searcher=bm25_searcher,
+    )
+
+    service.delete_document(
+        document_id=document_id,
+    )
+
+    assert bm25_searcher.rebuild_count == 1
+
+
+def test_delete_document_rejects_unknown_document():
+    """
+    Verify deleting an unknown document raises ValueError.
+    """
+
+    vector_store = FakeVectorStore([])
+
+    bm25_searcher = FakeBM25Searcher()
+
+    service = DocumentService(
+        vector_store=vector_store,
+        bm25_searcher=bm25_searcher,
+    )
+
+    unknown_document_id = uuid4()
+
+    try:
+        service.delete_document(
+            document_id=unknown_document_id,
+        )
+    except ValueError as exc:
+        assert str(unknown_document_id) in str(exc)
+    else:
+        raise AssertionError(
+            "Expected ValueError for unknown document."
+        )

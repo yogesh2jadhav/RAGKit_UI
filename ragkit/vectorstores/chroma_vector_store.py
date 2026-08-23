@@ -305,3 +305,28 @@ class ChromaVectorStore(VectorStore):
             self._collection.delete(
                 ids=ids,
             )
+
+
+    def delete_document(
+        self,
+        document_id: UUID,
+    ) -> None:
+        """
+        Remove all chunks belonging to a document.
+
+        The document ID is stored in Chroma metadata under
+        the internal RAGKit document ID field.
+        """
+
+        response = self._collection.get(
+            where={
+                self._DOCUMENT_ID: str(document_id),
+            },
+        )
+
+        ids = response["ids"]
+
+        if ids:
+            self._collection.delete(
+                ids=ids,
+            )

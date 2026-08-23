@@ -141,3 +141,18 @@ class VectorStore(ABC):
         Remove all indexed data from the vector store.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def delete_document(
+        self,
+        document_id: UUID,
+    ) -> None:
+        """
+        Remove all indexed chunks belonging to a document.
+
+        Parameters
+        ----------
+        document_id
+            ID of the document whose chunks should be removed.
+        """
+        raise NotImplementedError
