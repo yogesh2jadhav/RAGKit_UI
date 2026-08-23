@@ -74,3 +74,29 @@ def test_build_prompt_with_no_results():
     assert "Context" in prompt
 
     assert "Query" in prompt
+
+def test_prompt_prioritizes_explicit_document_answer():
+    """
+    Verify the prompt instructs the LLM to prefer an
+    explicitly stated answer over an unsupported calculation.
+    """
+
+    prompt = DefaultPromptBuilder().build(
+        query="How many years of experience does Yogesh have?",
+        search_results=[],
+    )
+
+    assert (
+        "If the document explicitly states an answer, prefer that statement"
+        in prompt
+    )
+
+    assert (
+        "Do not invent, assume, estimate, or guess missing facts."
+        in prompt
+    )
+
+    assert (
+        "Do not calculate dates or durations using an assumed"
+        in prompt
+    )

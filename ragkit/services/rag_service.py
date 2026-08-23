@@ -47,14 +47,15 @@ class RAGService:
     """
 
     def __init__(
-        self,
-        *,
-        retriever: Retriever,
-        keyword_searcher: BM25Searcher,
-        rrf: ReciprocalRankFusion,
-        prompt_builder: PromptBuilder,
-        llm: LLM,
-        top_k: int = 5,
+            self,
+            *,
+            retriever: Retriever,
+            keyword_searcher: BM25Searcher,
+            rrf: ReciprocalRankFusion,
+            prompt_builder: PromptBuilder,
+            llm: LLM,
+            top_k: int = 5,
+            candidate_k: int = 15,
     ) -> None:
         """
         Initialize the RAG service.
@@ -84,12 +85,21 @@ class RAGService:
         if top_k <= 0:
             raise ValueError("top_k must be greater than zero.")
 
+        if candidate_k <= 0:
+            raise ValueError("candidate_k must be greater than zero.")
+
+        if candidate_k < top_k:
+            raise ValueError(
+                "candidate_k must be greater than or equal to top_k."
+            )
+
         self._retriever = retriever
         self._keyword_searcher = keyword_searcher
         self._rrf = rrf
         self._prompt_builder = prompt_builder
         self._llm = llm
         self._top_k = top_k
+        self._candidate_k = candidate_k
 
     def ask(
             self,
@@ -134,6 +144,8 @@ class RAGService:
         LLMResponse
             Final generated response.
         """
+        if document_ids is not None:
+            document_ids = list(document_ids)
 
         if not query.strip():
             raise ValueError("query must not be empty.")
@@ -144,11 +156,21 @@ class RAGService:
         # --------------------------------------------------------
         #
 
+        vector_filters = dict(filters or {})
+
+        if document_ids is not None:
+            vector_filters["_ragkit_document_id"] = {
+                "$in": [
+                    str(document_id)
+                    for document_id in document_ids
+                ]
+            }
+
         vector_results = list(
             self._retriever.retrieve(
                 query=query,
-                top_k=self._top_k,
-                filters=filters,
+                top_k=self._candidate_k,
+                filters=vector_filters or None,
             )
         )
 
@@ -161,7 +183,7 @@ class RAGService:
         keyword_results = list(
             self._keyword_searcher.search(
                 query=query,
-                top_k=self._top_k,
+                top_k=self._candidate_k,
                 document_ids=document_ids,
             )
         )
@@ -177,8 +199,10 @@ class RAGService:
                 vector_results,
                 keyword_results,
             ],
-            top_k=self._top_k,
+            top_k=self._candidate_k,
         )
+
+        final_results = rrf_results[:self._top_k]
 
         #
         # --------------------------------------------------------
@@ -188,7 +212,7 @@ class RAGService:
 
         prompt = self._prompt_builder.build(
             query=query,
-            search_results=rrf_results,
+            search_results=final_results,
         )
 
         #
@@ -207,6 +231,7 @@ class RAGService:
         # --------------------------------------------------------
         #
 
+
         sources = [
             RAGSource(
                 document_id=result.chunk.document_id,
@@ -219,7 +244,7 @@ class RAGService:
                 chunk_id=result.chunk.id,
                 score=result.score,
             )
-            for result in rrf_results
+            for result in final_results
         ]
 
         return RAGResponse(

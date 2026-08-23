@@ -15,14 +15,15 @@ Does NOT
 """
 
 from __future__ import annotations
-from ragkit.services.rag_service_factory import create_rag_service
 from fastapi import FastAPI
 from ragkit.api.chat import create_chat_router
 from ragkit.api.documents import create_document_router
 from ragkit.config.server_config import default_server_config
 from ragkit.services.document_service import DocumentService
-from ragkit.vectorstores.chroma_vector_store import ChromaVectorStore
 from ragkit.services.rag_service import RAGService
+from ragkit.services.rag_service_factory import create_rag_service
+from ragkit.vectorstores.chroma_vector_store import ChromaVectorStore
+
 
 def create_app(
     *,
@@ -33,27 +34,25 @@ def create_app(
     Create and configure the RAGKit FastAPI application.
     """
 
-    if document_service is None or rag_service is None:
+    config = default_server_config()
 
-        config = default_server_config()
+    vector_store = ChromaVectorStore(
+        path=config.vector_db_path,
+        collection_name=config.collection_name,
+    )
 
-        vector_store = ChromaVectorStore(
-            path=config.vector_db_path,
-            collection_name=config.collection_name,
+    if document_service is None:
+        document_service = DocumentService(
+            vector_store=vector_store,
         )
 
-        if document_service is None:
-            document_service = DocumentService(
-                vector_store=vector_store,
-            )
-
-        if rag_service is None:
-            rag_service = create_rag_service(
-                vector_store=vector_store,
-                embedding_model=config.embedding_model,
-                llm_model=config.llm_model,
-                top_k=config.retrieval_top_k,
-            )
+    if rag_service is None:
+        rag_service = create_rag_service(
+            vector_store=vector_store,
+            embedding_model=config.embedding_model,
+            llm_model=config.llm_model,
+            top_k=config.retrieval_top_k,
+        )
 
     app = FastAPI(
         title="RAGKit API",
@@ -73,9 +72,6 @@ def create_app(
     )
 
     return app
-
-
-app = create_app()
 
 
 app = create_app()

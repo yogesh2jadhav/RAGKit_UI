@@ -1,24 +1,29 @@
 from collections.abc import Iterable
+from uuid import UUID, uuid4
 
 import pytest
 
-from ragkit.keyword.bm25_searcher import BM25Searcher
 from ragkit.llms.llm import LLM
+from ragkit.models.chunk import Chunk
 from ragkit.models.llm_response import LLMResponse
+from ragkit.models.rag_response import RAGResponse
 from ragkit.models.search_result import SearchResult
 from ragkit.prompts.prompt_builder import PromptBuilder
 from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 from ragkit.retrievers.retriever import Retriever
 from ragkit.services.rag_service import RAGService
-from ragkit.models.rag_response import RAGResponse
-from ragkit.models.chunk import Chunk
+
 
 class FakeRetriever(Retriever):
     """
     Fake semantic retriever used for testing.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        results: list[SearchResult] | None = None,
+    ) -> None:
+        self.results = results or []
         self.last_query = None
         self.last_top_k = None
         self.last_filters = None
@@ -33,7 +38,7 @@ class FakeRetriever(Retriever):
         self.last_top_k = top_k
         self.last_filters = filters
 
-        return []
+        return self.results[:top_k]
 
 
 class FakeBM25Searcher:
@@ -41,7 +46,11 @@ class FakeBM25Searcher:
     Fake BM25 searcher used for testing.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        results: list[SearchResult] | None = None,
+    ) -> None:
+        self.results = results or []
         self.last_query = None
         self.last_top_k = None
         self.last_document_ids = None
@@ -56,51 +65,59 @@ class FakeBM25Searcher:
         self.last_top_k = top_k
         self.last_document_ids = document_ids
 
-        return []
+        return self.results[:top_k]
 
 
 class FakeRRF:
     """
-    Fake Reciprocal Rank Fusion used for testing.
+    Fake Reciprocal Rank Fusion implementation used for testing.
     """
 
     def __init__(self) -> None:
-        self.last_results = None
+        self.last_ranked_lists = None
         self.last_top_k = None
 
     def fuse(
         self,
-        result_lists: list[Iterable[SearchResult]],
-        top_k: int = 5,
-    ) -> list[SearchResult]:
-        self.last_results = result_lists
+        ranked_lists,
+        top_k=None,
+    ):
+        self.last_ranked_lists = ranked_lists
         self.last_top_k = top_k
 
-        return []
+        results = []
+
+        for ranked_list in ranked_lists:
+            results.extend(ranked_list)
+
+        if top_k is None:
+            return results
+
+        return results[:top_k]
 
 
 class FakePromptBuilder:
     """
-    Fake PromptBuilder used for testing.
+    Fake prompt builder used for testing.
     """
 
     def __init__(self) -> None:
         self.last_query = None
-        self.last_results = None
+        self.last_search_results = []
 
     def build(
         self,
         *,
-        query: str,
-        search_results: Iterable[SearchResult],
-    ) -> str:
+        query,
+        search_results,
+    ):
         self.last_query = query
-        self.last_results = search_results
+        self.last_search_results = list(search_results)
 
         return "TEST PROMPT"
 
 
-class FakeLLM:
+class FakeLLM(LLM):
     """
     Fake LLM used for testing.
     """
@@ -120,15 +137,73 @@ class FakeLLM:
         )
 
 
+def create_search_result(
+    *,
+    index: int = 0,
+    filename: str = "test.docx",
+) -> SearchResult:
+    """
+    Create a deterministic SearchResult for tests.
+    """
+
+    document_id = uuid4()
+    chunk_id = uuid4()
+
+    chunk = Chunk(
+        id=chunk_id,
+        document_id=document_id,
+        index=index,
+        content=f"Test content {index}",
+        start_offset=0,
+        end_offset=len(f"Test content {index}"),
+        metadata={
+            "filename": filename,
+        },
+    )
+
+    return SearchResult(
+        chunk=chunk,
+        score=float(index + 1),
+    )
+
+
 def create_service(
+    *,
     top_k: int = 5,
+    candidate_k: int = 15,
+    retriever_results: list[SearchResult] | None = None,
+    keyword_results: list[SearchResult] | None = None,
 ):
     """
     Create RAGService with fake dependencies.
     """
 
-    retriever = FakeRetriever()
-    keyword_searcher = FakeBM25Searcher()
+    if retriever_results is None:
+        retriever_results = [
+            create_search_result(
+                index=index,
+                filename="vector.docx",
+            )
+            for index in range(candidate_k)
+        ]
+
+    if keyword_results is None:
+        keyword_results = [
+            create_search_result(
+                index=index,
+                filename="keyword.docx",
+            )
+            for index in range(candidate_k)
+        ]
+
+    retriever = FakeRetriever(
+        results=retriever_results,
+    )
+
+    keyword_searcher = FakeBM25Searcher(
+        results=keyword_results,
+    )
+
     rrf = FakeRRF()
     prompt_builder = FakePromptBuilder()
     llm = FakeLLM()
@@ -140,6 +215,7 @@ def create_service(
         prompt_builder=prompt_builder,
         llm=llm,
         top_k=top_k,
+        candidate_k=candidate_k,
     )
 
     return (
@@ -193,13 +269,18 @@ def test_rag_service_passes_query_to_retrievers():
         "How many years of experience?",
     )
 
-    assert retriever.last_query == "How many years of experience?"
-    assert keyword_searcher.last_query == "How many years of experience?"
+    assert retriever.last_query == (
+        "How many years of experience?"
+    )
+
+    assert keyword_searcher.last_query == (
+        "How many years of experience?"
+    )
 
 
-def test_rag_service_passes_top_k():
+def test_rag_service_passes_candidate_k_to_retrieval_stages():
     """
-    Verify top_k is passed to all retrieval stages.
+    Verify candidate_k is passed to all retrieval stages.
     """
 
     (
@@ -211,15 +292,16 @@ def test_rag_service_passes_top_k():
         _,
     ) = create_service(
         top_k=10,
+        candidate_k=20,
     )
 
     service.ask(
         "How many years of experience?",
     )
 
-    assert retriever.last_top_k == 10
-    assert keyword_searcher.last_top_k == 10
-    assert rrf.last_top_k == 10
+    assert retriever.last_top_k == 20
+    assert keyword_searcher.last_top_k == 20
+    assert rrf.last_top_k == 20
 
 
 def test_rag_service_passes_filters_to_retriever():
@@ -255,8 +337,8 @@ def test_rag_service_passes_results_to_rrf():
 
     (
         service,
-        retriever,
-        keyword_searcher,
+        _,
+        _,
         rrf,
         _,
         _,
@@ -266,8 +348,8 @@ def test_rag_service_passes_results_to_rrf():
         "Apache Spark",
     )
 
-    assert rrf.last_results is not None
-    assert len(rrf.last_results) == 2
+    assert rrf.last_ranked_lists is not None
+    assert len(rrf.last_ranked_lists) == 2
 
 
 def test_rag_service_builds_prompt_from_rrf_results():
@@ -289,7 +371,7 @@ def test_rag_service_builds_prompt_from_rrf_results():
     )
 
     assert prompt_builder.last_query == "Apache Spark"
-    assert prompt_builder.last_results is not None
+    assert prompt_builder.last_search_results
 
 
 def test_rag_service_rejects_empty_query():
@@ -338,13 +420,34 @@ def test_rag_service_rejects_invalid_top_k():
             top_k=0,
         )
 
-def test_rag_service_passes_document_ids_to_bm25():
+
+def test_rag_service_rejects_invalid_candidate_k():
     """
-    Verify selected document IDs are forwarded
-    to BM25 search.
+    Verify candidate_k must be greater than zero.
     """
 
-    from uuid import uuid4
+    with pytest.raises(ValueError):
+        create_service(
+            candidate_k=0,
+        )
+
+
+def test_rag_service_rejects_candidate_k_smaller_than_top_k():
+    """
+    Verify candidate_k cannot be smaller than top_k.
+    """
+
+    with pytest.raises(ValueError):
+        create_service(
+            top_k=10,
+            candidate_k=5,
+        )
+
+
+def test_rag_service_passes_document_ids_to_bm25():
+    """
+    Verify selected document IDs are forwarded to BM25 search.
+    """
 
     (
         service,
@@ -368,12 +471,41 @@ def test_rag_service_passes_document_ids_to_bm25():
     assert keyword_searcher.last_document_ids == document_ids
 
 
+def test_rag_service_passes_document_ids_to_vector_retriever():
+    """
+    Verify selected document IDs are converted into
+    a VectorStore metadata filter.
+    """
+
+    (
+        service,
+        retriever,
+        _,
+        _,
+        _,
+        _,
+    ) = create_service()
+
+    document_id = uuid4()
+
+    service.ask(
+        "How many years of experience?",
+        document_ids=[document_id],
+    )
+
+    assert retriever.last_filters == {
+        "_ragkit_document_id": {
+            "$in": [
+                str(document_id),
+            ],
+        },
+    }
+
+
 def test_rag_service_returns_sources():
     """
     Verify RAGService returns sources from RRF results.
     """
-
-    from uuid import uuid4
 
     document_id = uuid4()
     chunk_id = uuid4()
@@ -398,16 +530,13 @@ def test_rag_service_returns_sources():
     (
         service,
         _,
-        keyword_searcher,
+        _,
         rrf,
         _,
         _,
     ) = create_service()
 
-    #
-    # Make RRF return our fake result.
-    #
-    rrf.fuse = lambda result_lists, top_k=5: [
+    rrf.fuse = lambda ranked_lists, top_k=None: [
         result,
     ]
 
@@ -423,3 +552,28 @@ def test_rag_service_returns_sources():
     assert source.filename == "Yogesh Ashok 007.docx"
     assert source.chunk_id == chunk_id
     assert source.score == 0.95
+
+
+def test_rag_service_limits_final_results_to_top_k():
+    """
+    Verify top_k controls the final number of results
+    passed to the prompt builder.
+    """
+
+    (
+        service,
+        _,
+        _,
+        _,
+        prompt_builder,
+        _,
+    ) = create_service(
+        top_k=5,
+        candidate_k=15,
+    )
+
+    service.ask(
+        "How many years of experience?",
+    )
+
+    assert len(prompt_builder.last_search_results) == 5

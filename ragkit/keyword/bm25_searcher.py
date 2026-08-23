@@ -118,7 +118,7 @@ class BM25Searcher(KeywordSearcher):
 
         corpus = [
             self._tokenize(
-                chunk.content,
+                self._searchable_text(chunk),
             )
             for chunk in self._chunks
         ]
@@ -126,6 +126,27 @@ class BM25Searcher(KeywordSearcher):
         self._bm25 = BM25Okapi(
             corpus,
         )
+
+    @staticmethod
+    def _searchable_text(
+            chunk: Chunk,
+    ) -> str:
+        """
+        Build the text indexed by BM25.
+
+        Includes both document metadata and chunk content
+        so document filenames can participate in lexical search.
+        """
+
+        filename = str(
+            chunk.metadata.get(
+                "filename",
+                "",
+            )
+        )
+
+        return f"{filename} {chunk.content}"
+
 
     @staticmethod
     def _tokenize(

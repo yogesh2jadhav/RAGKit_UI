@@ -9,6 +9,7 @@ from ragkit.vectorstores.chroma_vector_store import ChromaVectorStore
 def create_chunk(
     content: str,
     index: int = 0,
+    filename: str = "test.docx",
 ) -> Chunk:
     return Chunk(
         id=uuid4(),
@@ -17,7 +18,9 @@ def create_chunk(
         content=content,
         start_offset=0,
         end_offset=len(content),
-        metadata={},
+        metadata={
+            "filename": filename,
+        },
     )
 
 
@@ -350,3 +353,58 @@ def test_bm25_unknown_query(
             document_a,
             document_b,
         }
+
+    def test_bm25_searches_filename_metadata(
+            tmp_path,
+    ):
+        """
+        Verify BM25 searches document filename metadata
+        in addition to chunk content.
+        """
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        yogesh_chunk = create_chunk(
+            "The profile describes nearly 20 years of rich expertise.",
+            filename="Yogesh Ashok 007.docx",
+        )
+
+        ashish_chunk = create_chunk(
+            "The profile describes professional experience.",
+            filename="Ashish Pawar (1).docx",
+        )
+
+        store.add(
+            chunks=[
+                yogesh_chunk,
+                ashish_chunk,
+            ],
+            embeddings=[
+                create_embedding(yogesh_chunk),
+                create_embedding(ashish_chunk),
+            ],
+        )
+
+        searcher = BM25Searcher(
+            vector_store=store,
+        )
+
+        results = list(
+            searcher.search(
+                "How many years of experience does Yogesh have?",
+                top_k=2,
+            )
+        )
+
+        assert len(results) == 2
+
+        assert results[0].chunk.document_id == (
+            yogesh_chunk.document_id
+        )
+
+        assert results[0].chunk.metadata["filename"] == (
+            "Yogesh Ashok 007.docx"
+        )
