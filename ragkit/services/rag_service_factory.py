@@ -38,9 +38,32 @@ def create_rag_service(
     embedding_model: str,
     llm_model: str,
     top_k: int = 5,
+    bm25_searcher: BM25Searcher | None = None,
 ) -> RAGService:
     """
     Create a fully configured RAGService.
+
+    Parameters
+    ----------
+    vector_store
+        Vector store used for semantic retrieval.
+
+    embedding_model
+        Ollama embedding model name.
+
+    llm_model
+        Ollama LLM model name.
+
+    top_k
+        Number of final retrieval results.
+
+    bm25_searcher
+        Optional existing BM25Searcher.
+
+        If supplied, the RAGService uses that instance.
+        This allows other application services, such as
+        DocumentService, to rebuild the same BM25 index
+        after document uploads.
     """
 
     embedder = OllamaEmbedder(
@@ -52,9 +75,10 @@ def create_rag_service(
         vector_store=vector_store,
     )
 
-    keyword_searcher = BM25Searcher(
-        vector_store=vector_store,
-    )
+    if bm25_searcher is None:
+        bm25_searcher = BM25Searcher(
+            vector_store=vector_store,
+        )
 
     rrf = ReciprocalRankFusion()
 
@@ -66,7 +90,7 @@ def create_rag_service(
 
     return RAGService(
         retriever=retriever,
-        keyword_searcher=keyword_searcher,
+        keyword_searcher=bm25_searcher,
         rrf=rrf,
         prompt_builder=prompt_builder,
         llm=llm,

@@ -42,7 +42,7 @@ def test_list_documents_endpoint(monkeypatch):
     monkeypatch.setattr(
         app_module,
         "DocumentService",
-        lambda vector_store: fake_service,
+        lambda **kwargs: fake_service,
     )
 
     app = create_app()

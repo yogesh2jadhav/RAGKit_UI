@@ -94,16 +94,7 @@ class DocumentIndexer(Indexer):
                 chunks=chunks,
                 embeddings=embeddings,
             )
-    # Delete Start
-        chunks, embeddings = self._processor.process(
-            document,
-        )
-        # print(
-        #     f"DEBUG: {source_document.uri} "
-        #     f"produced {len(chunks)} chunks "
-        #     f"and {len(embeddings)} embeddings"
-        # )
-    # Delete end
+
         return IndexingResult(
             documents=document_count,
             chunks=chunk_count,

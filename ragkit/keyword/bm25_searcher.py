@@ -17,9 +17,10 @@ Does NOT
 """
 
 from __future__ import annotations
-from uuid import UUID
+
 import re
 from collections.abc import Iterable
+from uuid import UUID
 
 from rank_bm25 import BM25Okapi
 
@@ -49,12 +50,22 @@ class BM25Searcher(KeywordSearcher):
 
         self._build_index()
 
+    def rebuild(self) -> None:
+        """
+        Rebuild the BM25 index from the current VectorStore.
+
+        This is used after new documents are indexed so that
+        BM25 can immediately search the newly added chunks.
+        """
+
+        self._build_index()
+
     def search(
-            self,
-            query: str,
-            *,
-            top_k: int = 5,
-            document_ids: Iterable[UUID] | None = None,
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        document_ids: Iterable[UUID] | None = None,
     ) -> Iterable[SearchResult]:
         """
         Perform BM25 keyword search.
@@ -64,9 +75,7 @@ class BM25Searcher(KeywordSearcher):
         """
 
         if self._bm25 is None:
-            raise KeywordSearcherError(
-                "BM25 index has not been built."
-            )
+            return
 
         query_tokens = self._tokenize(
             query,
@@ -86,14 +95,14 @@ class BM25Searcher(KeywordSearcher):
             (
                 (chunk, score)
                 for chunk, score in zip(
-                self._chunks,
-                scores,
-                strict=True,
-            )
+                    self._chunks,
+                    scores,
+                    strict=True,
+                )
                 if (
                     selected_document_ids is None
                     or chunk.document_id in selected_document_ids
-            )
+                )
             ),
             key=lambda item: item[1],
             reverse=True,
@@ -110,11 +119,20 @@ class BM25Searcher(KeywordSearcher):
     ) -> None:
         """
         Build the BM25 index.
+
+        An empty VectorStore is valid. In that case,
+        no BM25 index is created until documents are indexed.
         """
 
-        chunks = list(self._vector_store.iter_chunks())
+        chunks = list(
+            self._vector_store.iter_chunks()
+        )
 
         self._chunks = chunks
+
+        if not chunks:
+            self._bm25 = None
+            return
 
         corpus = [
             self._tokenize(
@@ -129,7 +147,7 @@ class BM25Searcher(KeywordSearcher):
 
     @staticmethod
     def _searchable_text(
-            chunk: Chunk,
+        chunk: Chunk,
     ) -> str:
         """
         Build the text indexed by BM25.
@@ -146,7 +164,6 @@ class BM25Searcher(KeywordSearcher):
         )
 
         return f"{filename} {chunk.content}"
-
 
     @staticmethod
     def _tokenize(

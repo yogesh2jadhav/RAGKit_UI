@@ -39,7 +39,7 @@ def default_server_config() -> ServerConfig:
     return ServerConfig(
         vector_db_path=(
             project_root
-            / "examples"
+            / "documents"
             / "data"
             / "vector_db_rrf"
         ),

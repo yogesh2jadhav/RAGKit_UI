@@ -1,23 +1,22 @@
 """
 Purpose
 -------
-HTTP endpoints for indexed documents.
+Expose document management APIs.
 
 Responsibilities
 ----------------
-- Expose indexed documents through the REST API.
-- Delegate document operations to DocumentService.
+- List indexed documents.
+- Upload documents for indexing.
 
 Does NOT
 --------
-- Access ChromaDB directly.
-- Perform document indexing.
-- Perform RAG retrieval.
+- Implement document indexing.
+- Implement RAG retrieval.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 
 from ragkit.models.document_info import DocumentInfo
 from ragkit.services.document_service import DocumentService
@@ -27,7 +26,7 @@ def create_document_router(
     document_service: DocumentService,
 ) -> APIRouter:
     """
-    Create the document API router.
+    Create document management routes.
     """
 
     router = APIRouter(
@@ -36,7 +35,7 @@ def create_document_router(
     )
 
     @router.get(
-        "",
+        "/",
         response_model=list[DocumentInfo],
     )
     def list_documents() -> list[DocumentInfo]:
@@ -45,5 +44,28 @@ def create_document_router(
         """
 
         return document_service.list_documents()
+
+    @router.post(
+        "/upload",
+        response_model=DocumentInfo,
+    )
+    async def upload_document(
+        file: UploadFile = File(...),
+    ) -> DocumentInfo:
+        """
+        Upload and index a .docx document.
+        """
+
+        if not file.filename:
+            raise ValueError(
+                "Uploaded file must have a filename."
+            )
+
+        content = await file.read()
+
+        return document_service.upload_document(
+            filename=file.filename,
+            content=content,
+        )
 
     return router

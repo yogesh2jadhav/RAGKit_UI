@@ -408,3 +408,80 @@ def test_bm25_unknown_query(
         assert results[0].chunk.metadata["filename"] == (
             "Yogesh Ashok 007.docx"
         )
+
+    def test_bm25_rebuilds_index_after_new_chunks_are_added(
+            tmp_path,
+    ):
+        """
+        Verify BM25 rebuilds its index after new chunks
+        are added to the VectorStore.
+        """
+
+        store = ChromaVectorStore(
+            path=str(tmp_path),
+            collection_name="unit_test",
+        )
+
+        first_chunk = create_chunk(
+            "Apache Spark is fast",
+        )
+
+        store.add(
+            chunks=[first_chunk],
+            embeddings=[
+                create_embedding(first_chunk),
+            ],
+        )
+
+        searcher = BM25Searcher(
+            vector_store=store,
+        )
+
+        # The initial document should be searchable.
+        results = list(
+            searcher.search(
+                "spark",
+            )
+        )
+
+        assert len(results) == 1
+        assert results[0].chunk.content == (
+            "Apache Spark is fast"
+        )
+
+        # Add a new document after BM25 was created.
+        second_chunk = create_chunk(
+            "Kubernetes manages containers",
+        )
+
+        store.add(
+            chunks=[second_chunk],
+            embeddings=[
+                create_embedding(second_chunk),
+            ],
+        )
+
+        # Before rebuild, BM25 still has the old index.
+        results = list(
+            searcher.search(
+                "kubernetes",
+            )
+        )
+
+        assert len(results) == 0
+
+        # Rebuild BM25 from the updated VectorStore.
+        searcher.rebuild()
+
+        # The newly added document should now be searchable.
+        results = list(
+            searcher.search(
+                "kubernetes",
+            )
+        )
+
+        assert len(results) == 1
+
+        assert results[0].chunk.content == (
+            "Kubernetes manages containers"
+        )
