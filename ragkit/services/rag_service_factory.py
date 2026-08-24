@@ -30,7 +30,9 @@ from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 from ragkit.retrievers.similarity_retriever import SimilarityRetriever
 from ragkit.services.rag_service import RAGService
 from ragkit.vectorstores.vector_store import VectorStore
-
+from ragkit.query.ollama_query_normalizer import (
+    OllamaQueryNormalizer,
+)
 
 def create_rag_service(
     *,
@@ -88,11 +90,16 @@ def create_rag_service(
         model=llm_model,
     )
 
+    query_normalizer = OllamaQueryNormalizer(
+        llm=llm,
+    )
+
     return RAGService(
         retriever=retriever,
         keyword_searcher=bm25_searcher,
         rrf=rrf,
         prompt_builder=prompt_builder,
         llm=llm,
+        query_normalizer=query_normalizer,
         top_k=top_k,
     )
