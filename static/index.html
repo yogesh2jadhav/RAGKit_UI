@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -16,12 +15,15 @@
         rel="stylesheet"
         href="/static/style.css"
     >
-
 </head>
 
 <body>
 
 <div class="app">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
 
     <header class="header">
 
@@ -38,9 +40,9 @@
 
     <main class="main">
 
-        <!-- =====================================================
-             DOCUMENTS
-             ===================================================== -->
+        <!-- =================================================
+             DOCUMENTS PANEL
+             ================================================= -->
 
         <section class="documents-panel">
 
@@ -58,6 +60,8 @@
 
             </div>
 
+
+            <!-- Upload -->
 
             <div class="upload-section">
 
@@ -84,6 +88,8 @@
             ></div>
 
 
+            <!-- Search all -->
+
             <label class="document-option all-option">
 
                 <input
@@ -104,9 +110,11 @@
                 id="selectionInfo"
                 class="selection-info"
             >
-                Search all documents
+                No document selected
             </div>
 
+
+            <!-- Documents -->
 
             <div
                 id="documents"
@@ -122,9 +130,9 @@
         </section>
 
 
-        <!-- =====================================================
-             CHAT
-             ===================================================== -->
+        <!-- =================================================
+             CHAT PANEL
+             ================================================= -->
 
         <section class="chat-panel">
 
@@ -136,6 +144,8 @@
 
             </div>
 
+
+            <!-- Question -->
 
             <textarea
                 id="question"
@@ -156,6 +166,8 @@
 
             </div>
 
+
+            <!-- Error -->
 
             <div
                 id="error"
@@ -203,7 +215,7 @@
 
                         <div
                             id="normalizedQuery"
-                            class="answer"
+                            class="query-value"
                         ></div>
 
                     </div>
@@ -243,9 +255,7 @@
 </div>
 
 
-<script
-    src="/static/app.js"
-></script>
+<script src="/static/app.js"></script>
 
 </body>
 

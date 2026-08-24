@@ -1,19 +1,390 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background: #f5f7fa;
+
+    color: #1f2937;
+}
+
+
+.app {
+    min-height: 100vh;
+}
+
+
 /* =========================================================
-   Query Processing
+   HEADER
+   ========================================================= */
+
+.header {
+    padding: 24px 32px;
+
+    background: white;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.header h1 {
+    margin: 0;
+
+    font-size: 28px;
+}
+
+.header p {
+    margin: 6px 0 0;
+
+    color: #6b7280;
+}
+
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+.main {
+    display: grid;
+
+    grid-template-columns:
+        minmax(300px, 380px)
+        minmax(0, 1fr);
+
+    gap: 24px;
+
+    padding: 24px 32px;
+
+    max-width: 1500px;
+
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   PANELS
+   ========================================================= */
+
+.documents-panel,
+.chat-panel {
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 20px;
+}
+
+.chat-panel {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   SECTION HEADER
+   ========================================================= */
+
+.section-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+}
+
+.section-header h2 {
+    margin: 0;
+
+    font-size: 20px;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.primary-button,
+.secondary-button,
+.delete-button {
+    border: 0;
+
+    border-radius: 6px;
+
+    padding: 9px 14px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+}
+
+.primary-button {
+    background: #2563eb;
+
+    color: white;
+}
+
+.primary-button:hover {
+    background: #1d4ed8;
+}
+
+.primary-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+.secondary-button {
+    background: #e5e7eb;
+
+    color: #374151;
+}
+
+.secondary-button:hover {
+    background: #d1d5db;
+}
+
+.delete-button {
+    background: #fee2e2;
+
+    color: #b91c1c;
+
+    padding: 6px 10px;
+}
+
+.delete-button:hover {
+    background: #fecaca;
+}
+
+
+/* =========================================================
+   UPLOAD
+   ========================================================= */
+
+.upload-section {
+    display: flex;
+
+    gap: 8px;
+
+    align-items: center;
+
+    margin-bottom: 12px;
+}
+
+.upload-section input[type="file"] {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.upload-status {
+    margin-bottom: 12px;
+
+    padding: 8px 10px;
+
+    border-radius: 6px;
+
+    font-size: 13px;
+}
+
+.upload-success {
+    background: #dcfce7;
+
+    color: #166534;
+}
+
+.upload-error {
+    background: #fee2e2;
+
+    color: #991b1b;
+}
+
+
+/* =========================================================
+   DOCUMENTS
+   ========================================================= */
+
+.document-option {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    cursor: pointer;
+}
+
+.all-option {
+    margin-bottom: 10px;
+}
+
+.selection-info {
+    margin-bottom: 14px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+.documents {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.document-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding: 10px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 7px;
+}
+
+.document-details {
+    display: flex;
+
+    flex-direction: column;
+
+    min-width: 0;
+}
+
+.document-name {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 14px;
+}
+
+.chunk-count {
+    margin-top: 3px;
+
+    color: #9ca3af;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   QUESTION
+   ========================================================= */
+
+#question {
+    width: 100%;
+
+    resize: vertical;
+
+    padding: 12px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 7px;
+
+    font-family: inherit;
+
+    font-size: 15px;
+
+    line-height: 1.5;
+
+    outline: none;
+}
+
+#question:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(37, 99, 235, 0.12);
+}
+
+.ask-row {
+    display: flex;
+
+    justify-content: flex-end;
+
+    margin-top: 12px;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.error {
+    margin-top: 12px;
+
+    padding: 10px;
+
+    background: #fee2e2;
+
+    color: #991b1b;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   ANSWER
+   ========================================================= */
+
+.answer-section {
+    margin-top: 24px;
+
+    padding-top: 20px;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+.answer-section h2 {
+    margin-top: 0;
+}
+
+.answer-section h3 {
+    margin-top: 24px;
+
+    margin-bottom: 10px;
+}
+
+.answer {
+    white-space: pre-wrap;
+
+    line-height: 1.6;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   QUERY PROCESSING
    ========================================================= */
 
 .query-processing {
     margin-bottom: 24px;
-}
 
-.query-processing h3 {
-    margin-top: 0;
-    margin-bottom: 12px;
-}
-
-.query-item {
-    margin-bottom: 10px;
-    padding: 12px;
+    padding: 14px;
 
     background: #f9fafb;
 
@@ -22,18 +393,40 @@
     border-radius: 8px;
 }
 
+.query-processing h3 {
+    margin-top: 0;
+
+    margin-bottom: 14px;
+}
+
+.query-item {
+    margin-bottom: 12px;
+
+    padding: 10px;
+
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 6px;
+}
+
+.query-item:last-child {
+    margin-bottom: 0;
+}
+
 .query-label {
     margin-bottom: 5px;
 
     color: #6b7280;
 
-    font-size: 12px;
+    font-size: 11px;
 
-    font-weight: 600;
+    font-weight: 700;
 
     text-transform: uppercase;
 
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
 }
 
 .query-value {
@@ -41,13 +434,85 @@
 
     white-space: pre-wrap;
 
-    line-height: 1.5;
+    word-break: break-word;
+
+    color: #111827;
 
     font-size: 14px;
 
-    word-break: break-word;
+    line-height: 1.5;
 }
 
 .normalized-query {
     font-weight: 500;
+}
+
+
+/* =========================================================
+   SOURCES
+   ========================================================= */
+
+.sources {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.source {
+    padding: 10px;
+
+    background: #f9fafb;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 6px;
+}
+
+.source-name {
+    font-weight: 600;
+
+    font-size: 14px;
+}
+
+.source-chunk {
+    margin-top: 4px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   UTILITY
+   ========================================================= */
+
+.loading {
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .main {
+        grid-template-columns: 1fr;
+
+        padding: 16px;
+    }
+
+    .header {
+        padding: 20px;
+    }
 }

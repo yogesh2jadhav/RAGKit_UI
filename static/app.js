@@ -46,9 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("error");
 
 
-    /*
-     * Load documents.
-     */
+    // =========================================================
+    // DOCUMENTS
+    // =========================================================
+
     async function loadDocuments() {
 
         documentsContainer.innerHTML =
@@ -60,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 await fetch("/api/documents/");
 
             if (!response.ok) {
+
                 throw new Error(
                     "Failed to load documents."
                 );
@@ -78,9 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Render documents.
-     */
     function renderDocuments(documents) {
 
         documentsContainer.innerHTML = "";
@@ -103,11 +102,13 @@ document.addEventListener("DOMContentLoaded", () => {
             container.className =
                 "document-row";
 
+
             const label =
                 document.createElement("label");
 
             label.className =
                 "document-option";
+
 
             const checkbox =
                 document.createElement("input");
@@ -121,11 +122,13 @@ document.addEventListener("DOMContentLoaded", () => {
             checkbox.value =
                 doc.id;
 
+
             const details =
                 document.createElement("span");
 
             details.className =
                 "document-details";
+
 
             const name =
                 document.createElement("span");
@@ -136,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
             name.textContent =
                 doc.filename;
 
+
             const chunkCount =
                 document.createElement("span");
 
@@ -145,11 +149,16 @@ document.addEventListener("DOMContentLoaded", () => {
             chunkCount.textContent =
                 `${doc.chunk_count} chunks`;
 
+
             details.appendChild(name);
+
             details.appendChild(chunkCount);
 
+
             label.appendChild(checkbox);
+
             label.appendChild(details);
+
 
             const deleteButton =
                 document.createElement("button");
@@ -163,15 +172,18 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteButton.textContent =
                 "Delete";
 
+
             deleteButton.addEventListener(
                 "click",
                 () => {
+
                     deleteDocument(
                         doc.id,
                         doc.filename
                     );
                 }
             );
+
 
             checkbox.addEventListener(
                 "change",
@@ -184,21 +196,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             );
 
+
             container.appendChild(label);
+
             container.appendChild(deleteButton);
 
-            documentsContainer.appendChild(
-                container
-            );
+            documentsContainer.appendChild(container);
         });
+
 
         updateSelection();
     }
 
 
-    /*
-     * Get selected document IDs.
-     */
     function getSelectedDocumentIds() {
 
         return Array.from(
@@ -211,9 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Update selection information.
-     */
     function updateSelection() {
 
         const selected =
@@ -242,9 +249,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Search all documents.
-     */
+    // =========================================================
+    // SELECT ALL
+    // =========================================================
+
     selectAll.addEventListener(
         "change",
         () => {
@@ -267,56 +275,26 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    /*
-     * Refresh documents.
-     */
+    // =========================================================
+    // REFRESH
+    // =========================================================
+
     refreshDocuments.addEventListener(
         "click",
         loadDocuments
     );
 
 
-    /*
-     * Upload document.
-     */
+    // =========================================================
+    // UPLOAD
+    // =========================================================
+
     uploadButton.addEventListener(
         "click",
         uploadDocument
     );
 
 
-    /*
-     * Ask question.
-     */
-    askButton.addEventListener(
-        "click",
-        askQuestion
-    );
-
-
-    /*
-     * Cmd/Ctrl + Enter.
-     */
-    question.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                (event.metaKey || event.ctrlKey)
-            ) {
-
-                event.preventDefault();
-
-                askQuestion();
-            }
-        }
-    );
-
-
-    /*
-     * Upload document.
-     */
     async function uploadDocument() {
 
         const file =
@@ -332,6 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+
         if (
             !file.name
                 .toLowerCase()
@@ -346,6 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+
         hideError();
 
         uploadButton.disabled = true;
@@ -353,10 +333,12 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadButton.textContent =
             "Uploading...";
 
+
         showUploadStatus(
             "Uploading document...",
             false
         );
+
 
         try {
 
@@ -368,6 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 file
             );
 
+
             const response =
                 await fetch(
                     "/api/documents/upload",
@@ -377,8 +360,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 );
 
+
             const data =
                 await response.json();
+
 
             if (!response.ok) {
 
@@ -388,12 +373,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
             }
 
+
             documentFile.value = "";
+
 
             showUploadStatus(
                 `${data.filename} uploaded successfully.`,
                 false
             );
+
 
             await loadDocuments();
 
@@ -414,9 +402,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Delete document.
-     */
+    // =========================================================
+    // DELETE
+    // =========================================================
+
     async function deleteDocument(
         documentId,
         filename
@@ -429,11 +418,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 "the index and delete the original file."
             );
 
+
         if (!confirmed) {
             return;
         }
 
+
         hideError();
+
 
         try {
 
@@ -444,6 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         method: "DELETE"
                     }
                 );
+
 
             if (!response.ok) {
 
@@ -462,8 +455,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Response may not contain JSON.
                 }
 
+
                 throw new Error(message);
             }
+
 
             await loadDocuments();
 
@@ -474,13 +469,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Ask RAG question.
-     */
+    // =========================================================
+    // ASK
+    // =========================================================
+
+    askButton.addEventListener(
+        "click",
+        askQuestion
+    );
+
+
+    question.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter" &&
+                (event.metaKey || event.ctrlKey)
+            ) {
+
+                event.preventDefault();
+
+                askQuestion();
+            }
+        }
+    );
+
+
     async function askQuestion() {
 
         const query =
             question.value.trim();
+
 
         if (!query) {
 
@@ -491,8 +511,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+
         const selected =
             getSelectedDocumentIds();
+
 
         if (
             !selectAll.checked &&
@@ -506,26 +528,33 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+
         hideError();
+
 
         askButton.disabled = true;
 
         askButton.textContent =
             "Asking...";
 
+
         answerSection.classList.add(
             "hidden"
         );
 
+
         try {
 
             const payload = {
+
                 question: query,
+
                 document_ids:
                     selectAll.checked
                         ? null
                         : selected
             };
+
 
             const response =
                 await fetch(
@@ -543,8 +572,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 );
 
+
             const data =
                 await response.json();
+
 
             if (!response.ok) {
 
@@ -553,6 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Request failed."
                 );
             }
+
 
             renderAnswer(data);
 
@@ -570,33 +602,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Render answer and query processing information.
-     */
+    // =========================================================
+    // RENDER ANSWER
+    // =========================================================
+
     function renderAnswer(data) {
 
         /*
-         * Original query.
+         * Original query exactly as entered.
          */
+
         originalQuery.textContent =
-            data.original_query ?? "";
+            data.original_query || "";
+
 
         /*
-         * Normalized query.
+         * Normalized query used for retrieval.
          */
+
         normalizedQuery.textContent =
-            data.normalized_query ?? "";
+            data.normalized_query || "";
+
 
         /*
-         * Answer.
+         * LLM answer.
          */
+
         answer.textContent =
-            data.answer ?? "";
+            data.answer || "";
+
 
         /*
          * Sources.
          */
+
         sources.innerHTML = "";
+
 
         if (
             Array.isArray(data.sources) &&
@@ -611,6 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 div.className =
                     "source";
 
+
                 const sourceName =
                     document.createElement("div");
 
@@ -619,6 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 sourceName.textContent =
                     source.filename;
+
 
                 const sourceChunk =
                     document.createElement("div");
@@ -629,17 +672,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 sourceChunk.textContent =
                     `Chunk: ${source.chunk_id}`;
 
-                div.appendChild(
-                    sourceName
-                );
 
-                div.appendChild(
-                    sourceChunk
-                );
+                div.appendChild(sourceName);
 
-                sources.appendChild(
-                    div
-                );
+                div.appendChild(sourceChunk);
+
+                sources.appendChild(div);
             });
 
         } else {
@@ -648,15 +686,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 '<p class="loading">No sources returned.</p>';
         }
 
+
         answerSection.classList.remove(
             "hidden"
         );
     }
 
 
-    /*
-     * Show error.
-     */
+    // =========================================================
+    // ERROR
+    // =========================================================
+
     function showError(message) {
 
         error.textContent =
@@ -668,9 +708,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Hide error.
-     */
     function hideError() {
 
         error.classList.add(
@@ -679,9 +716,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Show upload status.
-     */
+    // =========================================================
+    // UPLOAD STATUS
+    // =========================================================
+
     function showUploadStatus(
         message,
         isError
@@ -706,9 +744,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Escape HTML.
-     */
+    // =========================================================
+    // HTML ESCAPE
+    // =========================================================
+
     function escapeHtml(value) {
 
         const div =
@@ -721,9 +760,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /*
-     * Initial document load.
-     */
+    // =========================================================
+    // INITIAL LOAD
+    // =========================================================
+
     loadDocuments();
 
 });
