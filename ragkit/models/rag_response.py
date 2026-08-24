@@ -5,11 +5,14 @@ Represents the result of a RAG query.
 
 Responsibilities
 ----------------
+- Store the original user query.
+- Store the normalized query used for retrieval.
 - Store the generated answer.
 - Store the source chunks used to generate the answer.
 
 Does NOT
 --------
+- Perform query normalization.
 - Perform retrieval.
 - Generate the answer.
 """
@@ -41,4 +44,6 @@ class RAGResponse:
     """
 
     answer: str
+    original_query: str
+    normalized_query: str
     sources: list[RAGSource]

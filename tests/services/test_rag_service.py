@@ -6,9 +6,11 @@ import pytest
 from ragkit.llms.llm import LLM
 from ragkit.models.chunk import Chunk
 from ragkit.models.llm_response import LLMResponse
+from ragkit.models.normalized_query import NormalizedQuery
 from ragkit.models.rag_response import RAGResponse
 from ragkit.models.search_result import SearchResult
 from ragkit.prompts.prompt_builder import PromptBuilder
+from ragkit.query.query_normalizer import QueryNormalizer
 from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 from ragkit.retrievers.retriever import Retriever
 from ragkit.services.rag_service import RAGService
@@ -137,6 +139,30 @@ class FakeLLM(LLM):
         )
 
 
+class FakeQueryNormalizer(QueryNormalizer):
+    """
+    Fake query normalizer used for RAGService tests.
+    """
+
+    def __init__(
+        self,
+        normalized_query: str,
+    ) -> None:
+        self.normalized_query = normalized_query
+        self.last_query = None
+
+    def normalize(
+        self,
+        query: str,
+    ) -> NormalizedQuery:
+        self.last_query = query
+
+        return NormalizedQuery(
+            original=query,
+            normalized=self.normalized_query,
+        )
+
+
 def create_search_result(
     *,
     index: int = 0,
@@ -173,6 +199,7 @@ def create_service(
     candidate_k: int = 15,
     retriever_results: list[SearchResult] | None = None,
     keyword_results: list[SearchResult] | None = None,
+    normalizer: QueryNormalizer | None = None,
 ):
     """
     Create RAGService with fake dependencies.
@@ -214,6 +241,7 @@ def create_service(
         rrf=rrf,
         prompt_builder=prompt_builder,
         llm=llm,
+        query_normalizer=normalizer,
         top_k=top_k,
         candidate_k=candidate_k,
     )
@@ -577,3 +605,56 @@ def test_rag_service_limits_final_results_to_top_k():
     )
 
     assert len(prompt_builder.last_search_results) == 5
+
+
+def test_rag_service_uses_normalized_query_for_retrieval():
+    """
+    Verify the normalized query is passed to semantic
+    retrieval, BM25, and PromptBuilder.
+    """
+
+    normalizer = FakeQueryNormalizer(
+        normalized_query=(
+            "How many years of experience does Yogesh have?"
+        ),
+    )
+
+    (
+        service,
+        retriever,
+        keyword_searcher,
+        _,
+        prompt_builder,
+        _,
+    ) = create_service(
+        normalizer=normalizer,
+    )
+
+    original_query = (
+        "How many years of experiance Yogesh have?"
+    )
+
+    service.ask(
+        original_query,
+    )
+
+    #
+    # The normalizer must receive the original query.
+    #
+    assert normalizer.last_query == original_query
+
+    #
+    # Retrieval must receive the normalized query.
+    #
+    expected_query = (
+        "How many years of experience does Yogesh have?"
+    )
+
+    assert retriever.last_query == expected_query
+
+    assert keyword_searcher.last_query == expected_query
+
+    #
+    # PromptBuilder must also receive the normalized query.
+    #
+    assert prompt_builder.last_query == expected_query

@@ -30,6 +30,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const answerSection =
         document.getElementById("answerSection");
 
+    const originalQuery =
+        document.getElementById("originalQuery");
+
+    const normalizedQuery =
+        document.getElementById("normalizedQuery");
+
     const answer =
         document.getElementById("answer");
 
@@ -41,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Load indexed documents.
+     * Load documents.
      */
     async function loadDocuments() {
 
@@ -73,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Render documents and their delete buttons.
+     * Render documents.
      */
     function renderDocuments(documents) {
 
@@ -191,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Return selected document IDs.
+     * Get selected document IDs.
      */
     function getSelectedDocumentIds() {
 
@@ -206,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Update the selection message.
+     * Update selection information.
      */
     function updateSelection() {
 
@@ -262,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Refresh document list.
+     * Refresh documents.
      */
     refreshDocuments.addEventListener(
         "click",
@@ -271,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Upload button.
+     * Upload document.
      */
     uploadButton.addEventListener(
         "click",
@@ -280,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Ask button.
+     * Ask question.
      */
     askButton.addEventListener(
         "click",
@@ -289,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Allow Cmd/Ctrl + Enter to submit a question.
+     * Cmd/Ctrl + Enter.
      */
     question.addEventListener(
         "keydown",
@@ -299,6 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.key === "Enter" &&
                 (event.metaKey || event.ctrlKey)
             ) {
+
                 event.preventDefault();
 
                 askQuestion();
@@ -308,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Upload a document.
+     * Upload document.
      */
     async function uploadDocument() {
 
@@ -408,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Delete a document.
+     * Delete document.
      */
     async function deleteDocument(
         documentId,
@@ -468,7 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Ask the RAG question.
+     * Ask RAG question.
      */
     async function askQuestion() {
 
@@ -564,17 +571,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Render RAG answer and sources.
+     * Render answer and query processing information.
      */
     function renderAnswer(data) {
 
-        answer.textContent =
-            data.answer || "";
+        /*
+         * Original query.
+         */
+        originalQuery.textContent =
+            data.original_query ?? "";
 
+        /*
+         * Normalized query.
+         */
+        normalizedQuery.textContent =
+            data.normalized_query ?? "";
+
+        /*
+         * Answer.
+         */
+        answer.textContent =
+            data.answer ?? "";
+
+        /*
+         * Sources.
+         */
         sources.innerHTML = "";
 
         if (
-            data.sources &&
+            Array.isArray(data.sources) &&
             data.sources.length > 0
         ) {
 
@@ -612,7 +637,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     sourceChunk
                 );
 
-                sources.appendChild(div);
+                sources.appendChild(
+                    div
+                );
             });
 
         } else {
@@ -628,7 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Show an application error.
+     * Show error.
      */
     function showError(message) {
 
@@ -642,7 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * Hide an application error.
+     * Hide error.
      */
     function hideError() {
 
@@ -680,7 +707,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
+     * Escape HTML.
+     */
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent =
+            value;
+
+        return div.innerHTML;
+    }
+
+
+    /*
      * Initial document load.
      */
     loadDocuments();
+
 });

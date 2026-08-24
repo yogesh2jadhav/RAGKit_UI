@@ -59,6 +59,11 @@ def create_chat_router(
 
         return ChatResponse(
             answer=response.answer,
+
+            original_query=response.original_query,
+
+            normalized_query=response.normalized_query,
+
             sources=[
                 ChatSource(
                     document_id=source.document_id,

@@ -34,6 +34,8 @@ class FakeRAGService:
 
         return RAGResponse(
             answer="TEST ANSWER",
+            original_query=query,
+            normalized_query=query,
             sources=[
                 RAGSource(
                     document_id=document_id,

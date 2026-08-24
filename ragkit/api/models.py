@@ -6,8 +6,9 @@ HTTP request and response models for the RAGKit API.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
@@ -39,4 +40,9 @@ class ChatResponse(BaseModel):
     """
 
     answer: str
+
+    original_query: str
+
+    normalized_query: str
+
     sources: list[ChatSource]

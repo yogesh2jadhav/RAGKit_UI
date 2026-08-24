@@ -35,6 +35,8 @@ from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
 from ragkit.retrievers.retriever import Retriever
 from collections.abc import Iterable
 from uuid import UUID
+from ragkit.models.normalized_query import NormalizedQuery
+from ragkit.query.query_normalizer import QueryNormalizer
 
 class RAGService:
     """
@@ -54,6 +56,7 @@ class RAGService:
             rrf: ReciprocalRankFusion,
             prompt_builder: PromptBuilder,
             llm: LLM,
+            query_normalizer: QueryNormalizer | None = None,
             top_k: int = 5,
             candidate_k: int = 15,
     ) -> None:
@@ -100,55 +103,42 @@ class RAGService:
         self._llm = llm
         self._top_k = top_k
         self._candidate_k = candidate_k
+        self._query_normalizer = query_normalizer
 
     def ask(
             self,
             query: str,
             *,
-            document_ids: Iterable[UUID] | None = None,
-            filters: dict[str, Any] | None = None,
-    ) -> LLMResponse:
-        """
-        Execute a RAG query.
-
-        Flow
-        ----
-        Query
-          ↓
-        Vector Search
-          +
-        BM25
-          ↓
-        RRF
-          ↓
-        Prompt Builder
-          ↓
-        LLM
-          ↓
-        LLMResponse
-
-        Parameters
-        ----------
-        query
-            User's question.
-
-        filters
-            Optional metadata filters.
-
-            These will be used by the semantic retriever.
-            BM25 filtering will be handled later when we
-            implement document selection.
-
-        Returns
-        -------
-        LLMResponse
-            Final generated response.
-        """
-        if document_ids is not None:
-            document_ids = list(document_ids)
+            filters: dict[str, object] | None = None,
+            document_ids: list[UUID] | None = None,
+    ) -> RAGResponse:
 
         if not query.strip():
-            raise ValueError("query must not be empty.")
+            raise ValueError(
+                "query must not be empty."
+            )
+
+        #
+        # --------------------------------------------------------
+        # 0. NORMALIZE QUERY
+        # --------------------------------------------------------
+        #
+
+        if self._query_normalizer is not None:
+            normalized_query = (
+                self._query_normalizer.normalize(
+                    query,
+                )
+            )
+        else:
+            normalized_query = NormalizedQuery(
+                original=query,
+                normalized=query,
+            )
+
+        search_query = normalized_query.normalized
+
+
 
         #
         # --------------------------------------------------------
@@ -168,7 +158,7 @@ class RAGService:
 
         vector_results = list(
             self._retriever.retrieve(
-                query=query,
+                query=search_query,
                 top_k=self._candidate_k,
                 filters=vector_filters or None,
             )
@@ -182,7 +172,7 @@ class RAGService:
 
         keyword_results = list(
             self._keyword_searcher.search(
-                query=query,
+                query=search_query,
                 top_k=self._candidate_k,
                 document_ids=document_ids,
             )
@@ -210,8 +200,8 @@ class RAGService:
         # --------------------------------------------------------
         #
 
-        prompt = self._prompt_builder.build(
-            query=query,
+        prompt = prompt = self._prompt_builder.build(
+            query=search_query,
             search_results=final_results,
         )
 
@@ -231,15 +221,15 @@ class RAGService:
         # --------------------------------------------------------
         #
 
-
         sources = [
             RAGSource(
                 document_id=result.chunk.document_id,
-                filename=str(
+                filename=result.chunk.metadata.get(
+                    "filename",
                     result.chunk.metadata.get(
-                        "filename",
-                        result.chunk.document_id,
-                    )
+                        "uri",
+                        "unknown",
+                    ),
                 ),
                 chunk_id=result.chunk.id,
                 score=result.score,
@@ -249,5 +239,7 @@ class RAGService:
 
         return RAGResponse(
             answer=llm_response.content,
+            original_query=normalized_query.original,
+            normalized_query=normalized_query.normalized,
             sources=sources,
         )

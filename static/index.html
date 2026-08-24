@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+
     <title>RAGKit</title>
 
     <link
         rel="stylesheet"
         href="/static/style.css"
     >
+
 </head>
 
 <body>
@@ -19,26 +24,40 @@
 <div class="app">
 
     <header class="header">
+
         <div>
             <h1>RAGKit</h1>
-            <p>Document Question Answering</p>
+
+            <p>
+                Document Question Answering
+            </p>
         </div>
+
     </header>
 
+
     <main class="main">
+
+        <!-- =====================================================
+             DOCUMENTS
+             ===================================================== -->
 
         <section class="documents-panel">
 
             <div class="section-header">
+
                 <h2>Documents</h2>
 
                 <button
                     id="refreshDocuments"
                     class="secondary-button"
+                    type="button"
                 >
                     Refresh
                 </button>
+
             </div>
+
 
             <div class="upload-section">
 
@@ -51,44 +70,72 @@
                 <button
                     id="uploadButton"
                     class="primary-button"
+                    type="button"
                 >
                     Upload
                 </button>
 
             </div>
 
+
             <div
                 id="uploadStatus"
                 class="upload-status hidden"
             ></div>
 
+
             <label class="document-option all-option">
+
                 <input
                     type="checkbox"
                     id="selectAll"
                 >
 
                 <span>
-                    <strong>Search all documents</strong>
+                    <strong>
+                        Search all documents
+                    </strong>
                 </span>
+
             </label>
+
+
+            <div
+                id="selectionInfo"
+                class="selection-info"
+            >
+                Search all documents
+            </div>
+
 
             <div
                 id="documents"
                 class="documents"
             >
+
                 <p class="loading">
                     Loading documents...
                 </p>
+
             </div>
 
         </section>
 
+
+        <!-- =====================================================
+             CHAT
+             ===================================================== -->
+
         <section class="chat-panel">
 
             <div class="section-header">
-                <h2>Ask a question</h2>
+
+                <h2>
+                    Ask a question
+                </h2>
+
             </div>
+
 
             <textarea
                 id="question"
@@ -96,42 +143,91 @@
                 rows="5"
             ></textarea>
 
-            <div class="ask-row">
 
-                <span
-                    id="selectionInfo"
-                    class="selection-info"
-                >
-                    Search all documents
-                </span>
+            <div class="ask-row">
 
                 <button
                     id="askButton"
                     class="primary-button"
+                    type="button"
                 >
                     Ask
                 </button>
 
             </div>
 
+
             <div
                 id="error"
                 class="error hidden"
             ></div>
+
+
+            <!-- =================================================
+                 ANSWER
+                 ================================================= -->
 
             <section
                 id="answerSection"
                 class="answer-section hidden"
             >
 
-                <h2>Answer</h2>
+                <!-- Query Processing -->
+
+                <div class="query-processing">
+
+                    <h3>
+                        Query Processing
+                    </h3>
+
+
+                    <div class="query-item">
+
+                        <div class="query-label">
+                            Original Query
+                        </div>
+
+                        <div
+                            id="originalQuery"
+                            class="query-value"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="query-item">
+
+                        <div class="query-label">
+                            Normalized Query
+                        </div>
+
+                        <div
+                            id="normalizedQuery"
+                            class="answer"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Answer -->
+
+                <h2>
+                    Answer
+                </h2>
 
                 <div
                     id="answer"
                     class="answer"
                 ></div>
 
-                <h3>Sources</h3>
+
+                <!-- Sources -->
+
+                <h3>
+                    Sources
+                </h3>
 
                 <div
                     id="sources"
@@ -146,7 +242,11 @@
 
 </div>
 
-<script src="/static/app.js"></script>
+
+<script
+    src="/static/app.js"
+></script>
 
 </body>
+
 </html>
