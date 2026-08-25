@@ -13,11 +13,38 @@ description = "A modular Retrieval-Augmented Generation framework"
 requires-python = ">=3.12"
 
 dependencies = [
+    # API
+    "fastapi",
+    "uvicorn[standard]",
+
+    # Data validation / models
+    "pydantic",
+
+    # Vector database
     "chromadb",
+
+    # Ollama Python client
     "ollama",
-    "rank-bm25",
+
+    # Embeddings / ML
     "sentence-transformers",
+    "torch",
+
+    # Keyword retrieval
+    "rank-bm25",
+
+    # Document loading
+    "python-docx",
 ]
+
+
+[project.optional-dependencies]
+
+dev = [
+    "pytest",
+    "ruff",
+]
+
 
 [tool.setuptools.packages.find]
 include = [

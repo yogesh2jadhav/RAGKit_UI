@@ -31,4 +31,23 @@ source .venv/bin/activate
 
 which python
 
+pip install rank-bm25
+Python
+├── FastAPI
+├── Uvicorn
+├── Pydantic
+├── ChromaDB
+├── PyTorch
+├── Sentence Transformers
+├── python-docx
+├── rank-bm25
+├── pytest
+└── Ruff
 
+irm https://ollama.com/install.ps1 | iex
+ollama --version
+ollama pull qwen3:8b
+
+python -m pip install ollama
+
+ollama pull nomic-embed-text
