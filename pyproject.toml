@@ -35,6 +35,9 @@ dependencies = [
 
     # Document loading
     "python-docx",
+
+    "python-multipart",
+    "httpx2",
 ]
 
 
@@ -51,7 +54,7 @@ include = [
     "ragkit",
     "ragkit.*",
 ]
-
+ 
 
 [tool.ruff]
 line-length = 100
@@ -69,4 +72,7 @@ select = [
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
+]
+filterwarnings = [
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:chromadb.telemetry.opentelemetry"
 ]

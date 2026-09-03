@@ -10,6 +10,11 @@ ragkit.egg-info/SOURCES.txt
 ragkit.egg-info/dependency_links.txt
 ragkit.egg-info/requires.txt
 ragkit.egg-info/top_level.txt
+ragkit/api/__init__.py
+ragkit/api/app.py
+ragkit/api/chat.py
+ragkit/api/documents.py
+ragkit/api/models.py
 ragkit/chunkers/SemanticChunker.py
 ragkit/chunkers/SentenceChunker.py
 ragkit/chunkers/TokenChunker.py
@@ -24,6 +29,7 @@ ragkit/config/llm_config.py
 ragkit/config/ragkit_config.py
 ragkit/config/reranker_config.py
 ragkit/config/retrieval_config.py
+ragkit/config/server_config.py
 ragkit/config/vector_store_config.py
 ragkit/embeddings/__init__.py
 ragkit/embeddings/embedder.py
@@ -54,10 +60,13 @@ ragkit/loaders/text_loader.py
 ragkit/models/__init__.py
 ragkit/models/chunk.py
 ragkit/models/document.py
+ragkit/models/document_info.py
 ragkit/models/embedding.py
 ragkit/models/indexing_result.py
 ragkit/models/llm_response.py
+ragkit/models/normalized_query.py
 ragkit/models/query_embedding.py
+ragkit/models/rag_response.py
 ragkit/models/search_result.py
 ragkit/models/source_document.py
 ragkit/pipelines/__init__.py
@@ -68,6 +77,9 @@ ragkit/processors/document_processor.py
 ragkit/prompts/__init__.py
 ragkit/prompts/default_prompt_builder.py
 ragkit/prompts/prompt_builder.py
+ragkit/query/__init__.py
+ragkit/query/ollama_query_normalizer.py
+ragkit/query/query_normalizer.py
 ragkit/ranking/__init__.py
 ragkit/ranking/rank_fusion.py
 ragkit/ranking/reciprocal_rank_fusion.py
@@ -82,7 +94,9 @@ ragkit/retrievers/hybrid_retriever.py
 ragkit/retrievers/retriever.py
 ragkit/retrievers/similarity_retriever.py
 ragkit/services/__init__.py
+ragkit/services/document_service.py
 ragkit/services/rag_service.py
+ragkit/services/rag_service_factory.py
 ragkit/sources/__init__.py
 ragkit/sources/local_source.py
 ragkit/sources/metadata_local_source.py

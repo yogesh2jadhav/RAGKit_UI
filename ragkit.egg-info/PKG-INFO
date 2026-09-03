@@ -3,7 +3,17 @@ Name: ragkit
 Version: 0.1.0
 Summary: A modular Retrieval-Augmented Generation framework
 Requires-Python: >=3.12
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: pydantic
 Requires-Dist: chromadb
 Requires-Dist: ollama
-Requires-Dist: rank-bm25
 Requires-Dist: sentence-transformers
+Requires-Dist: torch
+Requires-Dist: rank-bm25
+Requires-Dist: python-docx
+Requires-Dist: python-multipart
+Requires-Dist: httpx2
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"

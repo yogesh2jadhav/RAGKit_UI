@@ -1,4 +1,15 @@
+fastapi
+uvicorn[standard]
+pydantic
 chromadb
 ollama
-rank-bm25
 sentence-transformers
+torch
+rank-bm25
+python-docx
+python-multipart
+httpx2
+
+[dev]
+pytest
+ruff
