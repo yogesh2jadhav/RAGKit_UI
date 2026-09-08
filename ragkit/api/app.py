@@ -30,6 +30,7 @@ from ragkit.config.server_config import default_server_config
 from ragkit.embeddings.ollama_embedder import OllamaEmbedder
 from ragkit.indexers.document_indexer import DocumentIndexer
 from ragkit.keyword.bm25_searcher import BM25Searcher
+from ragkit.logger import configure_logging, logger
 from ragkit.processors.document_processor import DocumentProcessor
 from ragkit.services.document_service import DocumentService
 from ragkit.services.rag_service import RAGService
@@ -45,6 +46,10 @@ def create_app(
     """
     Create and configure the RAGKit FastAPI application.
     """
+
+    configure_logging()
+
+    logger.info("Creating RAGKit FastAPI application")
 
     app = FastAPI(
         title="RAGKit API",
@@ -85,6 +90,16 @@ def create_app(
     # ------------------------------------------------------------------
 
     config = default_server_config()
+
+    logger.info(
+        "Server config: vector_db_path=%s, collection=%s, "
+        "embedding_model=%s, llm_model=%s, top_k=%s",
+        config.vector_db_path,
+        config.collection_name,
+        config.embedding_model,
+        config.llm_model,
+        config.retrieval_top_k,
+    )
 
     # ------------------------------------------------------------------
     # Vector store
@@ -173,6 +188,8 @@ def create_app(
             rag_service,
         )
     )
+
+    logger.info("RAGKit application ready")
 
     return app
 

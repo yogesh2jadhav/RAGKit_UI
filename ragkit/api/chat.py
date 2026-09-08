@@ -26,6 +26,7 @@ from ragkit.api.models import (
     ChatResponse,
     ChatSource,
 )
+from ragkit.logger import logger
 from ragkit.services.rag_service import RAGService
 
 
@@ -52,9 +53,20 @@ def create_chat_router(
         Execute a RAG query.
         """
 
+        logger.info(
+            "Chat request: question=%r, document_ids=%s",
+            request.question,
+            request.document_ids,
+        )
+
         response = rag_service.ask(
             request.question,
             document_ids=request.document_ids,
+        )
+
+        logger.info(
+            "Chat response: %d source(s) returned",
+            len(response.sources),
         )
 
         return ChatResponse(

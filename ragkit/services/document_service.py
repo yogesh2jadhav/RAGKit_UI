@@ -28,6 +28,7 @@ from uuid import UUID
 
 from ragkit.indexers.document_indexer import DocumentIndexer
 from ragkit.keyword.bm25_searcher import BM25Searcher
+from ragkit.logger import logger
 from ragkit.models.chunk import Chunk
 from ragkit.models.document_info import DocumentInfo
 from ragkit.sources.local_source import LocalSource
@@ -127,6 +128,12 @@ class DocumentService:
 
         safe_filename = Path(filename).name
 
+        logger.info(
+            "Uploading document: %s (%d bytes)",
+            safe_filename,
+            len(content),
+        )
+
         #
         # Replace an existing document with the same filename.
         #
@@ -186,6 +193,11 @@ class DocumentService:
         #
         self._bm25_searcher.rebuild()
 
+        logger.info(
+            "Document indexed and BM25 rebuilt: %s",
+            safe_filename,
+        )
+
         documents = self.list_documents()
 
         matching_documents = [
@@ -235,6 +247,12 @@ class DocumentService:
         #
         # Delete all chunks belonging to this document.
         #
+        logger.info(
+            "Deleting document: %s (%s)",
+            document.filename,
+            document_id,
+        )
+
         self._vector_store.delete_document(
             document_id,
         )

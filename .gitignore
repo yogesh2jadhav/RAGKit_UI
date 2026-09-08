@@ -28,3 +28,7 @@ vector_db/
 
 # Environment
 .env
+
+# Logs
+logs/
+*.log
