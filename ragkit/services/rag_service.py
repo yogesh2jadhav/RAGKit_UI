@@ -29,6 +29,7 @@ from typing import Any
 
 from ragkit.keyword.bm25_searcher import BM25Searcher
 from ragkit.llms.llm import LLM
+from ragkit.logger import logger
 from ragkit.models.llm_response import LLMResponse
 from ragkit.prompts.prompt_builder import PromptBuilder
 from ragkit.ranking.reciprocal_rank_fusion import ReciprocalRankFusion
@@ -138,6 +139,12 @@ class RAGService:
 
         search_query = normalized_query.normalized
 
+        logger.info(
+            "RAG query: original=%r, normalized=%r",
+            normalized_query.original,
+            search_query,
+        )
+
 
 
         #
@@ -194,6 +201,14 @@ class RAGService:
 
         final_results = rrf_results[:self._top_k]
 
+        logger.info(
+            "Retrieval: %d vector, %d keyword, %d after RRF (top_k=%d)",
+            len(vector_results),
+            len(keyword_results),
+            len(final_results),
+            self._top_k,
+        )
+
         #
         # --------------------------------------------------------
         # 4. BUILD PROMPT
@@ -211,8 +226,15 @@ class RAGService:
         # --------------------------------------------------------
         #
 
+        logger.info("Generating answer with LLM")
+
         llm_response = self._llm.generate(
             prompt=prompt,
+        )
+
+        logger.info(
+            "LLM answer generated (%d chars)",
+            len(llm_response.content),
         )
 
         #
