@@ -262,7 +262,9 @@ library it installs only a `NullHandler`; applications turn logging on by callin
 
 Logged events include: app startup and resolved server config, each chat request
 and its query normalization, retrieval counts (vector / keyword / after RRF),
-LLM generation, and document upload / index / delete.
+LLM generation (with a `took=<seconds>` timing for every Ollama call), and
+document upload / index / delete. Check `logs/ragkit.log` first when a chat
+request is slow or errors out — it shows exactly how long each step took.
 
 ### Environment variables
 
@@ -320,3 +322,4 @@ Study order for the codebase is in [`Flow.txt`](Flow.txt).
 | `Static directory does not exist` | Run uvicorn from the repo root |
 | Empty answers / no sources | Upload a `.docx` in the UI first so it gets indexed |
 | Slow first response | Models load into memory on first use |
+| Chat takes 1–3+ minutes | Every chat request makes **two** LLM calls (query normalization, then answer generation), and `qwen3:8b` is a reasoning model that by default generates a long hidden "thinking" trace before its answer — expensive on CPU-only machines. `OllamaLLM` now defaults to `think=False` to skip that trace; check `logs/ragkit.log` for `Ollama generate: ... took=Xs` to see where the time goes, and consider a smaller model (e.g. `qwen3:1.7b`, `llama3.2`) if you're on CPU |
