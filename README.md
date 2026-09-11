@@ -243,6 +243,22 @@ reads `default_server_config()` in `ragkit/config/server_config.py`:
 | `embedding_model` | `nomic-embed-text` |
 | `llm_model` | `qwen3:8b` |
 | `retrieval_top_k` | `5` |
+| `llm_think` | `false` (override with `RAGKIT_LLM_THINK`) |
+
+### Thinking mode (`RAGKIT_LLM_THINK`)
+
+`qwen3:8b` is a reasoning model: with thinking enabled it works through a
+hidden chain-of-thought before answering, which is slow (especially on
+CPU-only machines) but tends to produce more thorough, detailed answers.
+With thinking disabled (the default) it answers directly and much faster,
+but can be terser. Query normalization always runs with thinking disabled
+regardless of this setting, since it's a small task that doesn't benefit
+from it.
+
+```bash
+# Trade latency for more thorough answers
+RAGKIT_LLM_THINK=true uvicorn ragkit.api.app:app --reload
+```
 
 Logging is controlled by environment variables (see below).
 
@@ -322,4 +338,5 @@ Study order for the codebase is in [`Flow.txt`](Flow.txt).
 | `Static directory does not exist` | Run uvicorn from the repo root |
 | Empty answers / no sources | Upload a `.docx` in the UI first so it gets indexed |
 | Slow first response | Models load into memory on first use |
-| Chat takes 1–3+ minutes | Every chat request makes **two** LLM calls (query normalization, then answer generation), and `qwen3:8b` is a reasoning model that by default generates a long hidden "thinking" trace before its answer — expensive on CPU-only machines. `OllamaLLM` now defaults to `think=False` to skip that trace; check `logs/ragkit.log` for `Ollama generate: ... took=Xs` to see where the time goes, and consider a smaller model (e.g. `qwen3:1.7b`, `llama3.2`) if you're on CPU |
+| Chat takes 1–3+ minutes | `qwen3:8b` is a reasoning model that, with thinking enabled, generates a long hidden "thinking" trace before its answer — expensive on CPU-only machines. Thinking is disabled by default (`llm_think=false`); check `logs/ragkit.log` for `Ollama generate: ... took=Xs` to see where the time goes, and consider a smaller model (e.g. `qwen3:1.7b`, `llama3.2`) if you're on CPU |
+| Answers are one-word / too terse | That's `qwen3:8b` responding directly with thinking disabled. Either set `RAGKIT_LLM_THINK=true` for more thorough (but slower) answers, or keep thinking off — the prompt (`ragkit/prompts/default_prompt_builder.py`) now explicitly requires a complete sentence rather than a bare word/number |
