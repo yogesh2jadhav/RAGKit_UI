@@ -93,12 +93,13 @@ def create_app(
 
     logger.info(
         "Server config: vector_db_path=%s, collection=%s, "
-        "embedding_model=%s, llm_model=%s, top_k=%s",
+        "embedding_model=%s, llm_model=%s, top_k=%s, llm_think=%s",
         config.vector_db_path,
         config.collection_name,
         config.embedding_model,
         config.llm_model,
         config.retrieval_top_k,
+        config.llm_think,
     )
 
     # ------------------------------------------------------------------
@@ -171,6 +172,7 @@ def create_app(
             llm_model=config.llm_model,
             top_k=config.retrieval_top_k,
             bm25_searcher=keyword_searcher,
+            llm_think=config.llm_think,
         )
 
     # ------------------------------------------------------------------

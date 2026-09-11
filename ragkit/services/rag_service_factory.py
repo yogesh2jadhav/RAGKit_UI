@@ -41,6 +41,7 @@ def create_rag_service(
     llm_model: str,
     top_k: int = 5,
     bm25_searcher: BM25Searcher | None = None,
+    llm_think: bool = False,
 ) -> RAGService:
     """
     Create a fully configured RAGService.
@@ -66,6 +67,13 @@ def create_rag_service(
         This allows other application services, such as
         DocumentService, to rebuild the same BM25 index
         after document uploads.
+
+    llm_think
+        Whether the final answer LLM should use "thinking" mode
+        (reasoning models only, e.g. qwen3). Slower, but tends to
+        produce more thorough answers. Query normalization always
+        runs with thinking disabled, since it is a small, fast task
+        that doesn't benefit from it.
     """
 
     embedder = OllamaEmbedder(
@@ -88,10 +96,25 @@ def create_rag_service(
 
     llm = OllamaLLM(
         model=llm_model,
+        think=llm_think,
+    )
+
+    #
+    # Query normalization is a small task and never benefits from
+    # thinking mode, so it always uses its own fast, non-thinking LLM
+    # instance rather than the (possibly slower) answer-generation LLM.
+    #
+    normalizer_llm = (
+        llm
+        if not llm_think
+        else OllamaLLM(
+            model=llm_model,
+            think=False,
+        )
     )
 
     query_normalizer = OllamaQueryNormalizer(
-        llm=llm,
+        llm=normalizer_llm,
     )
 
     return RAGService(

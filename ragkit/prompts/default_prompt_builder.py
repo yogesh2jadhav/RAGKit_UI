@@ -81,7 +81,11 @@ class DefaultPromptBuilder(PromptBuilder):
                 document the question refers to.
             11. Do not assume that a person is associated with a document unless
                 the filename or other source metadata identifies them.
-        
+            12. Always answer in at least one complete, well-formed sentence.
+                Never reply with a single word, a bare number, or a sentence
+                fragment - state the specific fact directly, then briefly
+                support it with the relevant detail from the context.
+
             Context
             -------
             {context}
