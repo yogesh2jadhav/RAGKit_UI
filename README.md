@@ -242,10 +242,10 @@ reads `default_server_config()` in `ragkit/config/server_config.py`:
 | `collection_name` | `ragkit_rrf` |
 | `embedding_model` | `nomic-embed-text` |
 | `llm_model` | `qwen3:8b` |
-| `retrieval_top_k` | `5` (override with `RAGKIT_TOP_K`) |
+| `retrieval_top_k` | `15` (override with `RAGKIT_TOP_K`) |
 | `llm_think` | `true` (override with `RAGKIT_LLM_THINK`) |
-| `chunk_size` | `800` (override with `RAGKIT_CHUNK_SIZE`) |
-| `chunk_overlap` | `150` (override with `RAGKIT_CHUNK_OVERLAP`) |
+| `chunk_size` | `2500` (override with `RAGKIT_CHUNK_SIZE`) |
+| `chunk_overlap` | `300` (override with `RAGKIT_CHUNK_OVERLAP`) |
 
 ### Chunk size and answer length
 

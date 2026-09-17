@@ -29,8 +29,8 @@ class ServerConfig:
     llm_model: str
     retrieval_top_k: int
     llm_think: bool = True
-    chunk_size: int = 800
-    chunk_overlap: int = 150
+    chunk_size: int = 2500
+    chunk_overlap: int = 300
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -87,7 +87,7 @@ def default_server_config() -> ServerConfig:
         # existing RRF CLI.
         embedding_model="nomic-embed-text",
         llm_model="qwen3:8b",
-        retrieval_top_k=_env_int("RAGKIT_TOP_K", 5),
+        retrieval_top_k=_env_int("RAGKIT_TOP_K", 15),
 
         # Reasoning models (qwen3, deepseek-r1, ...) generate a long
         # "thinking" trace before the final answer, which is slow on
@@ -101,6 +101,6 @@ def default_server_config() -> ServerConfig:
         # produced terse, thin answers compared to bigger chunk sizes.
         # Only affects documents indexed AFTER this is applied; existing
         # documents must be re-uploaded to be re-chunked.
-        chunk_size=_env_int("RAGKIT_CHUNK_SIZE", 800),
-        chunk_overlap=_env_int("RAGKIT_CHUNK_OVERLAP", 150),
+        chunk_size=_env_int("RAGKIT_CHUNK_SIZE", 2500),
+        chunk_overlap=_env_int("RAGKIT_CHUNK_OVERLAP", 300),
     )

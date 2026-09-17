@@ -19,7 +19,7 @@ def test_default_server_config():
     assert config.collection_name == "ragkit_rrf"
     assert config.embedding_model == "nomic-embed-text"
     assert config.llm_model == "qwen3:8b"
-    assert config.retrieval_top_k == 5
+    assert config.retrieval_top_k == 15
     assert config.llm_think is True
-    assert config.chunk_size == 800
-    assert config.chunk_overlap == 150
+    assert config.chunk_size == 2500
+    assert config.chunk_overlap == 300
