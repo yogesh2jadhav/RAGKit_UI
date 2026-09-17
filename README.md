@@ -242,8 +242,25 @@ reads `default_server_config()` in `ragkit/config/server_config.py`:
 | `collection_name` | `ragkit_rrf` |
 | `embedding_model` | `nomic-embed-text` |
 | `llm_model` | `qwen3:8b` |
-| `retrieval_top_k` | `5` |
+| `retrieval_top_k` | `15` (override with `RAGKIT_TOP_K`) |
 | `llm_think` | `true` (override with `RAGKIT_LLM_THINK`) |
+| `chunk_size` | `2500` (override with `RAGKIT_CHUNK_SIZE`) |
+| `chunk_overlap` | `300` (override with `RAGKIT_CHUNK_OVERLAP`) |
+
+### Chunk size and answer length
+
+`chunk_size`/`chunk_overlap` control how uploaded `.docx` files are split
+before indexing. Smaller chunks retrieve more precisely but hand the LLM
+less material per source, which shows up as short, thin, or overly hedged
+answers even when a relevant document is indexed - the model can only
+work with what's in the top `retrieval_top_k` retrieved chunks. Increase
+`RAGKIT_CHUNK_SIZE` (and `RAGKIT_TOP_K`) if answers feel too short given
+what's actually in your documents.
+
+**These settings only affect documents indexed *after* you change them.**
+Documents already indexed keep their original chunk size - delete and
+re-upload them (or clear `documents/data/vector_db_rrf/`) to re-chunk with
+new settings.
 
 ### Thinking mode (`RAGKIT_LLM_THINK`)
 
@@ -339,3 +356,4 @@ Study order for the codebase is in [`Flow.txt`](Flow.txt).
 | Slow first response | Models load into memory on first use |
 | Chat takes 1–3+ minutes | `qwen3:8b` is a reasoning model that, with thinking enabled (the default), generates a long hidden "thinking" trace before its answer — expensive on CPU-only machines. Set `RAGKIT_LLM_THINK=false` to skip that trace and trade answer quality for speed; check `logs/ragkit.log` for `Ollama generate: ... took=Xs` to see where the time goes, and consider a smaller model (e.g. `qwen3:1.7b`, `llama3.2`) if you're on CPU |
 | Answers are one-word / too terse | Likely running with `RAGKIT_LLM_THINK=false`. Unset it (thinking is on by default) for more thorough answers, or keep thinking off for speed — the prompt (`ragkit/prompts/default_prompt_builder.py`) requires a complete sentence rather than a bare word/number either way |
+| Answer is short/thin even with sources returned | The retrieved chunks are too small/narrow — check `logs/ragkit.log` for the `Retrieval: ...` line. Increase `RAGKIT_CHUNK_SIZE`/`RAGKIT_TOP_K` and **re-upload the document** (existing chunks in the index don't change automatically) |
