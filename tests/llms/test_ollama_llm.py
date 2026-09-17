@@ -34,7 +34,7 @@ def test_generate(mock_client):
     client.generate.assert_called_once_with(
         model="llama3.2",
         prompt="Say hello",
-        think=False,
+        think=True,
         options=None,
     )
 
@@ -67,7 +67,7 @@ def test_generate_with_options(mock_client):
     client.generate.assert_called_once_with(
         model="llama3.2",
         prompt="Hello",
-        think=False,
+        think=True,
         options={
             "temperature": 0,
         },
@@ -115,7 +115,7 @@ def test_create_llm_with_default_model():
 @patch("ragkit.llms.ollama_llm.ollama.Client")
 def test_generate_think_override(mock_client):
     """
-    Verify the `think` flag can be overridden.
+    Verify the `think` flag can be overridden (disabled) for speed.
     """
 
     client = MagicMock()
@@ -128,7 +128,7 @@ def test_generate_think_override(mock_client):
 
     llm = OllamaLLM(
         model="qwen3:8b",
-        think=True,
+        think=False,
     )
 
     llm.generate(
@@ -138,7 +138,7 @@ def test_generate_think_override(mock_client):
     client.generate.assert_called_once_with(
         model="qwen3:8b",
         prompt="Hello",
-        think=True,
+        think=False,
         options=None,
     )
 

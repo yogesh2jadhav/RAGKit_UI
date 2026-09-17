@@ -45,7 +45,7 @@ class OllamaLLM(LLM):
         host: str = "http://localhost:11434",
         *,
         config: LLMConfig | None = None,
-        think: bool | None = False,
+        think: bool | None = True,
     ) -> None:
         """
         Initialize the Ollama LLM.
@@ -59,11 +59,12 @@ class OllamaLLM(LLM):
             Whether to enable "thinking" mode for reasoning models such
             as qwen3 / deepseek-r1. Thinking mode produces a long
             chain-of-thought before the final answer, which is usually
-            not shown to the user but still has to be generated -
-            this can take minutes on CPU-only machines. Defaults to
-            ``False`` (disabled) for faster, more predictable latency.
-            Pass ``None`` to use the model's own default, or ``True``
-            to force it on. Ignored by models that don't support it.
+            not shown to the user but still has to be generated - this
+            can take minutes on CPU-only machines, but tends to produce
+            more thorough answers. Defaults to ``True`` (enabled) for
+            answer quality. Pass ``False`` to trade quality for faster,
+            more predictable latency, or ``None`` to use the model's own
+            default. Ignored by models that don't support it.
         """
 
         #
