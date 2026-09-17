@@ -20,3 +20,4 @@ def test_default_server_config():
     assert config.embedding_model == "nomic-embed-text"
     assert config.llm_model == "qwen3:8b"
     assert config.retrieval_top_k == 5
+    assert config.llm_think is True

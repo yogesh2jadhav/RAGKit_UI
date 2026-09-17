@@ -28,7 +28,7 @@ class ServerConfig:
     embedding_model: str
     llm_model: str
     retrieval_top_k: int
-    llm_think: bool = False
+    llm_think: bool = True
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -73,7 +73,7 @@ def default_server_config() -> ServerConfig:
         # Reasoning models (qwen3, deepseek-r1, ...) generate a long
         # "thinking" trace before the final answer, which is slow on
         # CPU-only machines but tends to produce more thorough answers.
-        # Default to False for speed; set RAGKIT_LLM_THINK=true to
-        # trade latency for answer quality.
-        llm_think=_env_bool("RAGKIT_LLM_THINK", False),
+        # Default to True for answer quality; set RAGKIT_LLM_THINK=false
+        # to trade answer quality for latency.
+        llm_think=_env_bool("RAGKIT_LLM_THINK", True),
     )

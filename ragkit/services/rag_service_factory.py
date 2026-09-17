@@ -41,7 +41,7 @@ def create_rag_service(
     llm_model: str,
     top_k: int = 5,
     bm25_searcher: BM25Searcher | None = None,
-    llm_think: bool = False,
+    llm_think: bool = True,
 ) -> RAGService:
     """
     Create a fully configured RAGService.
