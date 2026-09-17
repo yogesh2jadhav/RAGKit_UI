@@ -93,13 +93,16 @@ def create_app(
 
     logger.info(
         "Server config: vector_db_path=%s, collection=%s, "
-        "embedding_model=%s, llm_model=%s, top_k=%s, llm_think=%s",
+        "embedding_model=%s, llm_model=%s, top_k=%s, llm_think=%s, "
+        "chunk_size=%s, chunk_overlap=%s",
         config.vector_db_path,
         config.collection_name,
         config.embedding_model,
         config.llm_model,
         config.retrieval_top_k,
         config.llm_think,
+        config.chunk_size,
+        config.chunk_overlap,
     )
 
     # ------------------------------------------------------------------
@@ -136,8 +139,8 @@ def create_app(
     )
 
     chunker = CharacterChunker(
-        chunk_size=300,
-        chunk_overlap=50,
+        chunk_size=config.chunk_size,
+        chunk_overlap=config.chunk_overlap,
     )
 
     document_processor = DocumentProcessor(

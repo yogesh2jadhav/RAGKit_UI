@@ -29,6 +29,8 @@ class ServerConfig:
     llm_model: str
     retrieval_top_k: int
     llm_think: bool = True
+    chunk_size: int = 800
+    chunk_overlap: int = 150
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -46,6 +48,23 @@ def _env_bool(name: str, default: bool) -> bool:
         return default
 
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    """
+    Read an integer environment variable, falling back to ``default``
+    if unset or not a valid integer.
+    """
+
+    value = os.environ.get(name)
+
+    if value is None:
+        return default
+
+    try:
+        return int(value.strip())
+    except ValueError:
+        return default
 
 
 def default_server_config() -> ServerConfig:
@@ -68,7 +87,7 @@ def default_server_config() -> ServerConfig:
         # existing RRF CLI.
         embedding_model="nomic-embed-text",
         llm_model="qwen3:8b",
-        retrieval_top_k=5,
+        retrieval_top_k=_env_int("RAGKIT_TOP_K", 5),
 
         # Reasoning models (qwen3, deepseek-r1, ...) generate a long
         # "thinking" trace before the final answer, which is slow on
@@ -76,4 +95,12 @@ def default_server_config() -> ServerConfig:
         # Default to True for answer quality; set RAGKIT_LLM_THINK=false
         # to trade answer quality for latency.
         llm_think=_env_bool("RAGKIT_LLM_THINK", True),
+
+        # Larger chunks give the LLM more context per retrieved source,
+        # at the cost of retrieval precision. 300/50 was too small - it
+        # produced terse, thin answers compared to bigger chunk sizes.
+        # Only affects documents indexed AFTER this is applied; existing
+        # documents must be re-uploaded to be re-chunked.
+        chunk_size=_env_int("RAGKIT_CHUNK_SIZE", 800),
+        chunk_overlap=_env_int("RAGKIT_CHUNK_OVERLAP", 150),
     )
