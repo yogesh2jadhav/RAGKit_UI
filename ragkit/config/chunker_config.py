@@ -24,9 +24,9 @@ class ChunkerConfig:
     Configuration for text chunking.
     """
 
-    chunk_size: int = 500
+    chunk_size: int = 2500
 
-    overlap: int = 50
+    overlap: int = 300
 
     def __post_init__(self) -> None:
         """
