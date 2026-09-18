@@ -626,10 +626,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         /*
          * LLM answer.
+         *
+         * The model replies in Markdown (### headings, **bold**,
+         * bullet lists, ...) so render it instead of showing raw
+         * markup as plain text.
          */
 
-        answer.textContent =
-            data.answer || "";
+        answer.innerHTML =
+            renderMarkdown(data.answer || "");
 
 
         /*
@@ -741,6 +745,208 @@ document.addEventListener("DOMContentLoaded", () => {
             "upload-success",
             !isError
         );
+    }
+
+
+    // =========================================================
+    // MARKDOWN RENDERING
+    //
+    // The LLM answer comes back as Markdown (### headings,
+    // **bold**, bullet/numbered lists, `code`). This is a small,
+    // dependency-free renderer - not a full CommonMark
+    // implementation, just enough to turn the model's typical
+    // output into readable HTML instead of raw ###/**/- markup.
+    //
+    // The input is HTML-escaped first, so no raw HTML from the
+    // model (or from document content it quotes) is ever inserted
+    // as markup.
+    // =========================================================
+
+    function renderMarkdownInline(text) {
+
+        let html =
+            escapeHtml(text);
+
+        // Inline code: `code`
+        html = html.replace(
+            /`([^`]+)`/g,
+            "<code>$1</code>"
+        );
+
+        // Bold: **text** or __text__
+        html = html.replace(
+            /\*\*([^*]+)\*\*/g,
+            "<strong>$1</strong>"
+        );
+
+        html = html.replace(
+            /__([^_]+)__/g,
+            "<strong>$1</strong>"
+        );
+
+        // Italic: *text* or _text_
+        html = html.replace(
+            /\*([^*]+)\*/g,
+            "<em>$1</em>"
+        );
+
+        html = html.replace(
+            /(^|[^\w])_([^_]+)_(?!\w)/g,
+            "$1<em>$2</em>"
+        );
+
+        return html;
+    }
+
+    function renderMarkdown(markdown) {
+
+        const lines =
+            (markdown || "")
+                .replace(/\r\n/g, "\n")
+                .split("\n");
+
+        const htmlParts = [];
+
+        let listType = null;
+
+        let paragraphLines = [];
+
+
+        function flushParagraph() {
+
+            if (paragraphLines.length === 0) {
+                return;
+            }
+
+            htmlParts.push(
+                `<p>${
+                    paragraphLines
+                        .map(renderMarkdownInline)
+                        .join("<br>")
+                }</p>`
+            );
+
+            paragraphLines = [];
+        }
+
+        function closeList() {
+
+            if (listType) {
+
+                htmlParts.push(
+                    `</${listType}>`
+                );
+
+                listType = null;
+            }
+        }
+
+        lines.forEach(rawLine => {
+
+            const line =
+                rawLine.trim();
+
+
+            // Blank line -> end current paragraph/list.
+            if (line === "") {
+
+                flushParagraph();
+
+                closeList();
+
+                return;
+            }
+
+
+            // Headings: #, ##, ### ... (up to h6)
+            const headingMatch =
+                line.match(/^(#{1,6})\s+(.*)$/);
+
+            if (headingMatch) {
+
+                flushParagraph();
+
+                closeList();
+
+                const level =
+                    headingMatch[1].length;
+
+                htmlParts.push(
+                    `<h${level}>${
+                        renderMarkdownInline(headingMatch[2])
+                    }</h${level}>`
+                );
+
+                return;
+            }
+
+
+            // Unordered list items: -, *, + followed by a space.
+            const bulletMatch =
+                line.match(/^[-*+]\s+(.*)$/);
+
+            if (bulletMatch) {
+
+                flushParagraph();
+
+                if (listType !== "ul") {
+
+                    closeList();
+
+                    htmlParts.push("<ul>");
+
+                    listType = "ul";
+                }
+
+                htmlParts.push(
+                    `<li>${
+                        renderMarkdownInline(bulletMatch[1])
+                    }</li>`
+                );
+
+                return;
+            }
+
+
+            // Ordered list items: 1. text
+            const numberedMatch =
+                line.match(/^\d+[.)]\s+(.*)$/);
+
+            if (numberedMatch) {
+
+                flushParagraph();
+
+                if (listType !== "ol") {
+
+                    closeList();
+
+                    htmlParts.push("<ol>");
+
+                    listType = "ol";
+                }
+
+                htmlParts.push(
+                    `<li>${
+                        renderMarkdownInline(numberedMatch[1])
+                    }</li>`
+                );
+
+                return;
+            }
+
+
+            // Plain text line -> part of the current paragraph.
+            closeList();
+
+            paragraphLines.push(line);
+        });
+
+        flushParagraph();
+
+        closeList();
+
+
+        return htmlParts.join("\n");
     }
 
 
