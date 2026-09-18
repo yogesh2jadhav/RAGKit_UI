@@ -26,3 +26,10 @@ class LLMConfig:
 
     model: str = "qwen3:8b"
     temperature: float = 0.0
+
+    #
+    # Whether to enable "thinking" mode for reasoning models such as
+    # qwen3 / deepseek-r1 (see OllamaLLM). Ignored by models that
+    # don't support it.
+    #
+    think: bool = True

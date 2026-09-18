@@ -17,9 +17,9 @@ def test_default_server_config():
 
     assert config.vector_db_path.name == "vector_db_rrf"
     assert config.collection_name == "ragkit_rrf"
-    assert config.embedding_model == "nomic-embed-text"
-    assert config.llm_model == "qwen3:8b"
+    assert config.embedding.model == "nomic-embed-text"
+    assert config.llm.model == "qwen3:8b"
     assert config.retrieval_top_k == 15
-    assert config.llm_think is True
-    assert config.chunk_size == 2500
-    assert config.chunk_overlap == 300
+    assert config.llm.think is True
+    assert config.chunker.chunk_size == 2500
+    assert config.chunker.overlap == 300
