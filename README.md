@@ -233,19 +233,33 @@ pytest
 
 ## 5. Configuration
 
-Configuration lives in `ragkit/config/` as frozen dataclasses. The web server
-reads `default_server_config()` in `ragkit/config/server_config.py`:
+Configuration lives in `ragkit/config/` as frozen dataclasses - small,
+reusable per-component configs (`ChunkerConfig`, `EmbeddingConfig`,
+`LLMConfig`, `RetrievalConfig`, `RerankerConfig`, `VectorStoreConfig`), each
+consumed directly by its component (e.g. `CharacterChunker(config=...)`).
+The web server's `ServerConfig` (`ragkit/config/server_config.py`) composes
+the same `ChunkerConfig`/`EmbeddingConfig`/`LLMConfig` instances rather than
+re-declaring their fields, so there is one definition of what each setting
+means - `default_server_config()` just supplies server-specific defaults and
+reads environment-variable overrides:
 
-| Setting | Default |
+| Setting (attribute path) | Default |
 |---|---|
 | `vector_db_path` | `documents/data/vector_db_rrf` |
 | `collection_name` | `ragkit_rrf` |
-| `embedding_model` | `nomic-embed-text` |
-| `llm_model` | `qwen3:8b` |
+| `embedding.model` | `nomic-embed-text` |
+| `llm.model` | `qwen3:8b` |
+| `llm.think` | `true` (override with `RAGKIT_LLM_THINK`) |
+| `chunker.chunk_size` | `2500` (override with `RAGKIT_CHUNK_SIZE`) |
+| `chunker.overlap` | `300` (override with `RAGKIT_CHUNK_OVERLAP`) |
 | `retrieval_top_k` | `15` (override with `RAGKIT_TOP_K`) |
-| `llm_think` | `true` (override with `RAGKIT_LLM_THINK`) |
-| `chunk_size` | `2500` (override with `RAGKIT_CHUNK_SIZE`) |
-| `chunk_overlap` | `300` (override with `RAGKIT_CHUNK_OVERLAP`) |
+
+`retrieval_top_k` is the one setting that stays a plain `ServerConfig` field
+rather than being folded into `RetrievalConfig`/`RerankerConfig`: despite the
+shared name, it means something different (RAGService's final post-RRF
+result count) from either of those, and the server doesn't use the reranker
+at all - forcing it into one of those classes would imply a connection that
+doesn't exist.
 
 ### Chunk size and answer length
 

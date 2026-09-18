@@ -157,3 +157,40 @@ def test_create_llm_with_config():
     )
 
     assert llm._model_name == "llama3.1:8b"
+
+
+@patch("ragkit.llms.ollama_llm.ollama.Client")
+def test_generate_config_overrides_think(mock_client):
+    """
+    Verify LLMConfig.think overrides the explicit `think` argument,
+    the same way it already overrides `model`.
+    """
+
+    client = MagicMock()
+
+    client.generate.return_value = {
+        "response": "Hello",
+    }
+
+    mock_client.return_value = client
+
+    config = LLMConfig(
+        model="qwen3:8b",
+        think=False,
+    )
+
+    llm = OllamaLLM(
+        think=True,
+        config=config,
+    )
+
+    llm.generate(
+        prompt="Hello",
+    )
+
+    client.generate.assert_called_once_with(
+        model="qwen3:8b",
+        prompt="Hello",
+        think=False,
+        options=None,
+    )

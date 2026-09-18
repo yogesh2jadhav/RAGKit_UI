@@ -54,7 +54,12 @@ class OllamaLLM(LLM):
         ----------
         model Name of the language model.
         host Ollama server URL.
-        config  Optional LLM configuration.
+        config
+            Optional LLM configuration. Overrides both ``model`` and
+            ``think`` when supplied - use this rather than the
+            individual keyword arguments where a config already exists
+            (e.g. server/app wiring), so there is one place that
+            defines these defaults.
         think
             Whether to enable "thinking" mode for reasoning models such
             as qwen3 / deepseek-r1. Thinking mode produces a long
@@ -64,7 +69,8 @@ class OllamaLLM(LLM):
             more thorough answers. Defaults to ``True`` (enabled) for
             answer quality. Pass ``False`` to trade quality for faster,
             more predictable latency, or ``None`` to use the model's own
-            default. Ignored by models that don't support it.
+            default. Ignored by models that don't support it. Ignored
+            when ``config`` is supplied - set ``config.think`` instead.
         """
 
         #
@@ -72,6 +78,7 @@ class OllamaLLM(LLM):
         #
         if config is not None:
             model = config.model
+            think = config.think
 
         self._model_name = model
         self._think = think

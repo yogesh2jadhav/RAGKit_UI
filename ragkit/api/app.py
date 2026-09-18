@@ -97,12 +97,12 @@ def create_app(
         "chunk_size=%s, chunk_overlap=%s",
         config.vector_db_path,
         config.collection_name,
-        config.embedding_model,
-        config.llm_model,
+        config.embedding.model,
+        config.llm.model,
         config.retrieval_top_k,
-        config.llm_think,
-        config.chunk_size,
-        config.chunk_overlap,
+        config.llm.think,
+        config.chunker.chunk_size,
+        config.chunker.overlap,
     )
 
     # ------------------------------------------------------------------
@@ -135,12 +135,11 @@ def create_app(
     # ------------------------------------------------------------------
 
     embedder = OllamaEmbedder(
-        model=config.embedding_model,
+        config=config.embedding,
     )
 
     chunker = CharacterChunker(
-        chunk_size=config.chunk_size,
-        chunk_overlap=config.chunk_overlap,
+        config=config.chunker,
     )
 
     document_processor = DocumentProcessor(
@@ -171,11 +170,11 @@ def create_app(
     if rag_service is None:
         rag_service = create_rag_service(
             vector_store=vector_store,
-            embedding_model=config.embedding_model,
-            llm_model=config.llm_model,
+            embedding_model=config.embedding.model,
+            llm_model=config.llm.model,
             top_k=config.retrieval_top_k,
             bm25_searcher=keyword_searcher,
-            llm_think=config.llm_think,
+            llm_think=config.llm.think,
         )
 
     # ------------------------------------------------------------------
