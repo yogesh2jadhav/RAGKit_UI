@@ -28,7 +28,7 @@ class RerankerConfig:
     # Number of results to return
     # after reranking.
     #
-    top_k: int = 5
+    top_k: int = 15
 
     #
     # Temperature used by LLM based

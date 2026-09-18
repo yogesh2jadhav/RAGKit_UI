@@ -54,7 +54,7 @@ include = [
     "ragkit",
     "ragkit.*",
 ]
- 
+
 
 [tool.ruff]
 line-length = 100

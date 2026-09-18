@@ -16,4 +16,4 @@ class RetrievalConfig:
     Retrieval configuration.
     """
 
-    top_k: int = 5
+    top_k: int = 15

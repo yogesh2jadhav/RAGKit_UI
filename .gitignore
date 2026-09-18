@@ -1,6 +1,8 @@
 # Virtual Environment
 .venv/
 
+documents/
+
 # Python
 __pycache__/
 *.py[cod]
