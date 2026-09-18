@@ -139,6 +139,21 @@ document.addEventListener("DOMContentLoaded", () => {
             name.textContent =
                 doc.filename;
 
+            // Native tooltip as a fallback/accessibility aid,
+            // alongside the hover auto-scroll below.
+            name.title =
+                doc.filename;
+
+            name.addEventListener(
+                "mouseenter",
+                () => startNameAutoScroll(name)
+            );
+
+            name.addEventListener(
+                "mouseleave",
+                () => stopNameAutoScroll(name)
+            );
+
 
             const chunkCount =
                 document.createElement("span");
@@ -745,6 +760,97 @@ document.addEventListener("DOMContentLoaded", () => {
             "upload-success",
             !isError
         );
+    }
+
+
+    // =========================================================
+    // DOCUMENT NAME AUTO-SCROLL
+    //
+    // .document-name has a fixed width with an ellipsis, so a long
+    // filename is cut off. On hover, scroll the (hidden) overflow
+    // back and forth so the user can read the full name without
+    // widening the layout.
+    // =========================================================
+
+    function startNameAutoScroll(el) {
+
+        const maxScroll =
+            el.scrollWidth - el.clientWidth;
+
+        // Fits already - nothing to reveal.
+        if (maxScroll <= 0) {
+            return;
+        }
+
+        el.classList.add("is-scrolling");
+
+        const pixelsPerFrame = 0.6;
+
+        const pauseFrames = 40;
+
+        let position = 0;
+
+        let direction = 1;
+
+        let pauseRemaining = pauseFrames;
+
+        function step() {
+
+            // Stopped (mouse left) - bail out of the loop.
+            if (!el.classList.contains("is-scrolling")) {
+                return;
+            }
+
+            if (pauseRemaining > 0) {
+
+                pauseRemaining -= 1;
+
+            } else {
+
+                position += direction * pixelsPerFrame;
+
+                if (position >= maxScroll) {
+
+                    position = maxScroll;
+
+                    direction = -1;
+
+                    pauseRemaining = pauseFrames;
+
+                } else if (position <= 0) {
+
+                    position = 0;
+
+                    direction = 1;
+
+                    pauseRemaining = pauseFrames;
+                }
+            }
+
+            el.scrollLeft = position;
+
+            el._autoScrollFrame =
+                requestAnimationFrame(step);
+        }
+
+        el._autoScrollFrame =
+            requestAnimationFrame(step);
+    }
+
+    function stopNameAutoScroll(el) {
+
+        el.classList.remove("is-scrolling");
+
+        if (el._autoScrollFrame) {
+
+            cancelAnimationFrame(
+                el._autoScrollFrame
+            );
+
+            el._autoScrollFrame = null;
+        }
+
+        el.scrollLeft = 0;
     }
 
 
